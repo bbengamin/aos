@@ -29,6 +29,7 @@ from tasklib import (
     status_posture,
     utc_now,
     waiting_on,
+    waiting_on_task,
 )
 
 
@@ -50,6 +51,7 @@ def record_cycle_outcome(
     suggested_action: str,
     next_step: str,
     waiting_on_state: str,
+    waiting_on_task_item: dict | None,
     afk_exit_status: int | None = None,
     completed_tasks: list[dict] | None = None,
     next_task: dict | None = None,
@@ -73,6 +75,9 @@ def record_cycle_outcome(
         "next_step": next_step,
         "waiting_on": waiting_on_state,
     }
+    if waiting_on_task_item is not None:
+        event["waiting_on_task_id"] = waiting_on_task_item.get("id")
+        event["waiting_on_task_title"] = waiting_on_task_item.get("title")
     if afk_exit_status is not None:
         event["afk_exit_status"] = afk_exit_status
     if completed_tasks:
@@ -93,6 +98,10 @@ def record_cycle_outcome(
     parts = [
         f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome} repo_state={repo_state} repo_state_reason={repo_state_reason} status_posture={status_posture_state} queue_health={queue_health_state} human_input_queue={human_input_queue_state!r} attention_required={attention} suggested_action={suggested_action} next_step={next_step!r} waiting_on={waiting_on_state}"
     ]
+    if waiting_on_task_item is not None:
+        parts.append(f"waiting_on_task_id={waiting_on_task_item.get('id')}")
+        if waiting_on_task_item.get("title"):
+            parts.append(f"waiting_on_task_title={waiting_on_task_item.get('title')!r}")
     if afk_exit_status is not None:
         parts.append(f"afk_exit_status={afk_exit_status}")
     if completed_tasks:
@@ -169,6 +178,11 @@ def main() -> int:
                 review_waiting=pre_cycle_review_waiting,
                 blockers=pre_cycle_blockers,
             )
+            pre_cycle_waiting_on_task = waiting_on_task(
+                review_waiting=pre_cycle_review_waiting,
+                blockers=pre_cycle_blockers,
+                dependency_waiting=pre_cycle_dependency_waiting,
+            )
             pre_cycle_next_step = next_step_summary(pre_cycle_suggested_action, pre_cycle_suggested_action_task)
             if max_cycles and launched_cycles >= max_cycles:
                 print("SUPERVISOR_STOPPED")
@@ -227,6 +241,7 @@ def main() -> int:
                         blockers=pre_cycle_blockers,
                         dependency_waiting=pre_cycle_dependency_waiting,
                     ),
+                    waiting_on_task_item=pre_cycle_waiting_on_task,
                     afk_exit_status=status,
                     suggested_action_task=pre_cycle_suggested_action_task,
                     executable_safe_tasks=executable_safe_task_count(pre_cycle_data),
@@ -259,6 +274,11 @@ def main() -> int:
                 dependency_waiting=post_cycle_dependency_waiting,
                 review_waiting=post_cycle_review_waiting,
                 blockers=post_cycle_blockers,
+            )
+            post_cycle_waiting_on_task = waiting_on_task(
+                review_waiting=post_cycle_review_waiting,
+                blockers=post_cycle_blockers,
+                dependency_waiting=post_cycle_dependency_waiting,
             )
             record_cycle_outcome(
                 cycle=launched_cycles,
@@ -308,6 +328,7 @@ def main() -> int:
                     blockers=post_cycle_blockers,
                     dependency_waiting=post_cycle_dependency_waiting,
                 ),
+                waiting_on_task_item=post_cycle_waiting_on_task,
                 afk_exit_status=status,
                 completed_tasks=completed_tasks,
                 next_task=next_task,

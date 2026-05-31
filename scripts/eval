@@ -1974,6 +1974,8 @@ def check_supervisor_loop() -> list[str]:
         failures.append("supervisor cycle summaries must surface the shared queue_health signal")
     if "human_input_queue" not in supervisor_text:
         failures.append("supervisor cycle summaries must surface the shared human_input_queue signal")
+    if "waiting_on_task" not in supervisor_text:
+        failures.append("supervisor cycle summaries must surface the concrete waiting_on task when one exists")
     if "executable_safe_tasks" not in supervisor_text:
         failures.append("supervisor cycle summaries must surface how many safe tasks remain executable after each cycle")
     if "completed_task_ids" not in supervisor_text:
@@ -2197,7 +2199,7 @@ def check_supervisor_cycle_summary() -> list[str]:
             return failures
 
         summary_line = (
-            "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=clean_idle repo_state=clean_idle_blocked repo_state_reason=human_blocked_only status_posture=clean_idle_blocked queue_health=blocked_only human_input_queue='review=0 blocked=1 total=1' attention_required=unblock suggested_action=unblock_human_task next_step='unblock_human_task BLOCKED-1: Waiting for human input' waiting_on=human_unblock afk_exit_status=0 "
+            "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=clean_idle repo_state=clean_idle_blocked repo_state_reason=human_blocked_only status_posture=clean_idle_blocked queue_health=blocked_only human_input_queue='review=0 blocked=1 total=1' attention_required=unblock suggested_action=unblock_human_task next_step='unblock_human_task BLOCKED-1: Waiting for human input' waiting_on=human_unblock waiting_on_task_id=BLOCKED-1 waiting_on_task_title='Waiting for human input' afk_exit_status=0 "
             "completed_count=1 completed_task_ids=AUTO-7 completed_task_titles='Add supervisor cycle outcome summaries' "
             "suggested_action_task_id=BLOCKED-1 suggested_action_task_title='Waiting for human input' remaining_safe_tasks=0 executable_safe_tasks=0"
         )
@@ -2230,6 +2232,10 @@ def check_supervisor_cycle_summary() -> list[str]:
                 failures.append("supervisor_cycle_summary event did not record the expected next_step signal for the clean-idle cycle")
             if event.get("waiting_on") != "human_unblock":
                 failures.append("supervisor_cycle_summary event did not record the expected waiting_on signal for the clean-idle cycle")
+            if event.get("waiting_on_task_id") != "BLOCKED-1":
+                failures.append("supervisor_cycle_summary event did not record the expected waiting_on task id for the clean-idle cycle")
+            if event.get("waiting_on_task_title") != "Waiting for human input":
+                failures.append("supervisor_cycle_summary event did not record the expected waiting_on task title for the clean-idle cycle")
             if event.get("completed_task_ids") != ["AUTO-7"]:
                 failures.append("supervisor_cycle_summary event did not record the expected completed task ids for the clean-idle cycle")
             if event.get("completed_task_titles") != ["Add supervisor cycle outcome summaries"]:
@@ -2360,6 +2366,8 @@ def check_supervisor_cycle_next_task_summary() -> list[str]:
                 failures.append("supervisor_cycle_summary event did not record the expected next_step signal for the progress cycle")
             if event.get("waiting_on") != "none":
                 failures.append("supervisor_cycle_summary event did not record the expected waiting_on signal for the progress cycle")
+            if "waiting_on_task_id" in event or "waiting_on_task_title" in event:
+                failures.append("supervisor_cycle_summary event should omit waiting_on task details when no waiting_on task exists in the progress cycle")
             if event.get("completed_task_ids") != ["AUTO-13"]:
                 failures.append("supervisor_cycle_summary event did not record the expected completed task ids for the progress cycle")
             if event.get("completed_task_titles") != ["Finish first task"]:

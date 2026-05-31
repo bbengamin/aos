@@ -82,6 +82,8 @@ Inside `episode`, the system now follows a fuller loop: if no executable safe ta
 
 Supervisor cycle summaries also carry the shared `status_posture` signal from `./scripts/status`, so unattended cycle logs expose whether the repo ended that cycle in a mixed condition like `ready_safe_backlog`, `blocked_waiting_for_human`, or `active_with_review_and_blocked` without forcing humans to reconstruct that posture from lower-level fields.
 
+When `waiting_on` is not `none`, those supervisor summaries now also carry `waiting_on_task_id` and `waiting_on_task_title`, mirroring the concrete wait-target signal from `./scripts/status` so humans can see exactly which review-gated, human-blocked, or dependency-waiting task is pausing unattended progress.
+
 To quickly inspect recent unattended run logs:
 
 ```bash
