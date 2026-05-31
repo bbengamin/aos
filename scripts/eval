@@ -1441,6 +1441,10 @@ def check_planner_candidate_audit_command() -> list[str]:
         for expected in [
             "PLANNER_GATE blocked",
             "planner_gate_reason: executable safe tasks already exist (1)",
+            "planner_gate_task_ids: AUTO-4",
+            "planner_gate_task_titles: Add planner backlog breadth limits",
+            "planner_gate_task_states: AUTO-4:pending",
+            "planner_gate_task_refs: AUTO-4: Add planner backlog breadth limits (pending)",
             "COVERED_COUNT ",
             "ELIGIBLE_COUNT ",
             "BLOCKED_COUNT ",

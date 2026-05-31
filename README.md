@@ -120,6 +120,8 @@ That audit uses the same eligibility logic as `./scripts/plan-next`, including t
 
 When that AUTO-task budget gate applies, `auto_task_refs` lists the concrete AUTO task ids and titles currently consuming the budget.
 
+When the top-level planner gate is blocked by executable safe work, the command now also prints `planner_gate_task_refs` so humans can see the exact blocking task ids, titles, and statuses before reading the per-candidate details.
+
 To block one task and keep the loop working on others:
 
 ```bash

@@ -12,6 +12,21 @@ from plannerlib import (
 from tasklib import load_tasks, pending_safe_tasks
 
 
+def task_refs(tasks: list[dict]) -> list[str]:
+    refs = []
+    for task in tasks:
+        task_id = task.get("id")
+        title = task.get("title")
+        status = task.get("status")
+        if task_id and title and status:
+            refs.append(f"{task_id}: {title} ({status})")
+        elif task_id and title:
+            refs.append(f"{task_id}: {title}")
+        elif task_id:
+            refs.append(task_id)
+    return refs
+
+
 def print_candidate(candidate: dict) -> None:
     print(f"{candidate['status'].upper()} {candidate['title']}")
     print(f"  theme: {candidate['theme']}")
@@ -121,6 +136,17 @@ def main() -> int:
     if pending:
         print("PLANNER_GATE blocked")
         print(f"planner_gate_reason: executable safe tasks already exist ({len(pending)})")
+        print(f"planner_gate_task_ids: {', '.join(task['id'] for task in pending if task.get('id'))}")
+        print(f"planner_gate_task_titles: {', '.join(task['title'] for task in pending if task.get('title'))}")
+        print(
+            "planner_gate_task_states: "
+            + ", ".join(
+                f"{task['id']}:{task['status']}"
+                for task in pending
+                if task.get("id") and task.get("status")
+            )
+        )
+        print(f"planner_gate_task_refs: {', '.join(task_refs(pending))}")
     else:
         print("PLANNER_GATE ready")
 
