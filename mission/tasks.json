@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T16:48:33Z",
+  "updated_at": "2026-05-31T16:51:05Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -679,7 +679,7 @@
       "id": "AUTO-26",
       "title": "Refine planner backlog generation heuristics batch 5",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -695,7 +695,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T16:45:48Z"
+      "planned_at": "2026-05-31T16:45:48Z",
+      "started_at": "2026-05-31T16:48:43Z",
+      "completed_at": "2026-05-31T16:51:05Z",
+      "completion_summary": "Added planner batch-limit audit ids so `scripts/planner-candidates` now shows which eligible task ids consumed the current planner batch, updated `./scripts/eval` to verify the new signal, and documented the richer batch-limit explanation in `README.md`."
     },
     {
       "id": "AUTO-27",

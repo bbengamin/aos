@@ -8,7 +8,7 @@ Follow this loop:
 4. Run `./scripts/eval`.
 5. If checks pass and the task is complete, print exactly one final line in this format: `COMPLETION_SUMMARY: <what changed>`.
 6. If the task cannot proceed without human input, print exactly one final line in this format: `BLOCKED_BY_HUMAN: <what decision or input is needed>`.
-7. Do not run `./scripts/complete-task`, `./scripts/block-task`, or `git commit` yourself when inside `./scripts/episode`; the runner will update task state after it sees the summary.
+7. Do not run `./scripts/complete-task`, `./scripts/block-task`, or `git commit` yourself when inside `./scripts/episode`; the runner owns task state updates, and commits are intentionally left for human-reviewed batching unless auto-commit is explicitly enabled.
 8. Stop for human review if risk is high.
 
 Never weaken the constitution.

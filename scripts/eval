@@ -1591,6 +1591,7 @@ def check_planner_candidate_batch_limit_explanations() -> list[str]:
             "BLOCKED Harden eval coverage for planner and supervisor loops batch 1",
             "  reason: planner_batch_full",
             "  planner_batch_task_titles: Add planner backlog breadth limits, Add stale-work status indicators, Refine supervisor cycle outcome summaries batch 1",
+            "  planner_batch_task_ids: PLANNED:Add planner backlog breadth limits, PLANNED:Add stale-work status indicators, PLANNED:Refine supervisor cycle outcome summaries batch 1",
             "  planner_batch_task_themes: planner, status, supervisor",
         ]:
             if expected not in result.stdout:

@@ -330,3 +330,30 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
 
 def planner_batch_consumers(candidates: list[dict]) -> list[dict]:
     return [candidate for candidate in candidates if candidate.get("status") == "eligible"][:PLANNER_BATCH_SIZE]
+
+
+def planner_batch_consumer_ids(data: dict, batch_consumers: list[dict]) -> list[str]:
+    consumer_ids = []
+    title_to_ids: dict[tuple[str, str | None, str | None], list[str]] = {}
+
+    for task in data.get("tasks", []):
+        key = (task.get("title"), task.get("done_condition"), task.get("generator_key"))
+        task_id = task.get("id")
+        if not task_id:
+            continue
+        title_to_ids.setdefault(key, []).append(task_id)
+
+    for candidate in batch_consumers:
+        key = (
+            candidate.get("title"),
+            candidate.get("done_condition"),
+            candidate.get("generator_key"),
+        )
+        existing_ids = title_to_ids.get(key, [])
+        if existing_ids:
+            consumer_ids.append(existing_ids[0])
+            continue
+
+        consumer_ids.append(f"PLANNED:{candidate['title']}")
+
+    return consumer_ids

@@ -2,7 +2,12 @@
 
 import sys
 
-from plannerlib import audit_planner_candidates, planner_batch_consumers, planner_max_auto_tasks
+from plannerlib import (
+    audit_planner_candidates,
+    planner_batch_consumer_ids,
+    planner_batch_consumers,
+    planner_max_auto_tasks,
+)
 from tasklib import load_tasks, pending_safe_tasks
 
 
@@ -36,6 +41,10 @@ def print_candidate(candidate: dict) -> None:
     if planner_batch_task_titles:
         print(f"  planner_batch_task_titles: {', '.join(planner_batch_task_titles)}")
 
+    planner_batch_task_ids = candidate.get("planner_batch_task_ids", [])
+    if planner_batch_task_ids:
+        print(f"  planner_batch_task_ids: {', '.join(planner_batch_task_ids)}")
+
     planner_batch_task_themes = candidate.get("planner_batch_task_themes", [])
     if planner_batch_task_themes:
         print(f"  planner_batch_task_themes: {', '.join(planner_batch_task_themes)}")
@@ -55,11 +64,13 @@ def main() -> int:
 
     if batch_consumers:
         batch_titles = [candidate["title"] for candidate in batch_consumers]
+        batch_ids = planner_batch_consumer_ids(data, batch_consumers)
         batch_themes = [candidate["theme"] for candidate in batch_consumers]
         for candidate in candidates:
             if candidate.get("reason") != "planner_batch_full":
                 continue
             candidate["planner_batch_task_titles"] = batch_titles
+            candidate["planner_batch_task_ids"] = batch_ids
             candidate["planner_batch_task_themes"] = batch_themes
 
     if pending:

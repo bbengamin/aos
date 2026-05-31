@@ -66,8 +66,19 @@ def extract_task_id(output: str) -> str | None:
     return None
 
 
+def commit_message_for(summary: str, task_id: str | None) -> str:
+    normalized = " ".join(summary.split())
+    prefix = f"aos: {task_id} " if task_id else "aos: "
+    max_summary_len = max(20, 72 - len(prefix))
+    trimmed = normalized[:max_summary_len].rstrip()
+    if len(normalized) > max_summary_len:
+        trimmed = trimmed.rstrip(".,;: ") + "..."
+    return prefix + trimmed
+
+
 def main() -> int:
     max_iterations = int(os.environ.get("MAX_ITERATIONS", "30"))
+    auto_commit = os.environ.get("AOS_AUTO_COMMIT", "0") == "1"
     idle_iterations = 0
 
     for iteration in range(1, max_iterations + 1):
@@ -144,9 +155,13 @@ def main() -> int:
             print("Eval failed after task completion. Continue only if the next iteration is expected to fix it.")
             return status
 
-        run(["git", "status", "--short"], allow_failure=False)
-        run(["git", "add", "README.md", "agents", "mission", "scripts"], allow_failure=False)
-        run(["git", "commit", "-m", f"agentic-os iteration {iteration}"], allow_failure=True)
+        if auto_commit:
+            run(["git", "status", "--short"], allow_failure=False)
+            run(["git", "add", "README.md", "agents", "mission", "scripts"], allow_failure=False)
+            run(["git", "commit", "-m", commit_message_for(completion_summary, selected_task_id)], allow_failure=True)
+        else:
+            print("AUTO_COMMIT_DISABLED")
+            print("reason: leave completed iteration changes for human review and intentional batching")
 
     print("Episode limit reached without completion.")
     return 1

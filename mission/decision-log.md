@@ -181,3 +181,17 @@ Consequences:
 - `scripts/plan-next` becomes the minimal local planner
 - `scripts/episode` now performs `plan -> act -> review -> learn -> update` more completely
 - the next gap after planning is a long-running supervisor/daemon
+
+## 2026-05-31 - Prefer intentional human-reviewed commit batching
+
+Decision:
+Do not auto-commit every completed AFK iteration by default. Leave completed changes in the worktree for human-reviewed batching, and if auto-commit is explicitly enabled, derive the commit message from the task summary instead of a generic iteration counter.
+
+Why:
+Per-iteration auto-commits created low-signal local history such as `agentic-os iteration N`, made review harder, and accumulated many unpushed commits with poor messages.
+
+Consequences:
+
+- `scripts/episode` now defaults to no auto-commit
+- completed AFK work remains visible for human inspection and intentional grouping before push
+- any explicitly enabled auto-commit path must use a task-summary-based message instead of a generic iteration number
