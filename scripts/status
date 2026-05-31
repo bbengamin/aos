@@ -7,6 +7,7 @@ from tasklib import (
     age_seconds,
     blocked_tasks,
     current_in_progress_task,
+    dependency_waiting_tasks,
     dependency_titles,
     format_age,
     is_clean_idle_blocked,
@@ -14,6 +15,7 @@ from tasklib import (
     is_stale_in_progress_task,
     latest_planning_event,
     load_tasks,
+    next_action,
     next_safe_task,
     pending_safe_tasks,
     review_waiting_tasks,
@@ -101,24 +103,6 @@ def next_action_task(
     if dependency_waiting:
         return dependency_waiting[0]
     return None
-
-
-def next_action(*, attention: str, current: dict | None, next_task: dict | None, dependency_waiting: list[dict]) -> str:
-    if attention == "review":
-        return "request_human_review"
-    if attention == "stale":
-        return "investigate_stale_work"
-    if attention == "unblock":
-        return "unblock_human_task"
-    if current:
-        return "continue_current"
-    if next_task:
-        return "execute_next_safe_task"
-    if dependency_waiting:
-        return "wait_on_dependencies"
-    return "idle"
-
-
 def main() -> int:
     data = load_tasks()
 
@@ -127,13 +111,7 @@ def main() -> int:
     planned = pending_safe_tasks(data)
     blockers = blocked_tasks(data)
     review_waiting = review_waiting_tasks(data)
-    dependency_waiting = [
-        task
-        for task in data.get("tasks", [])
-        if task.get("status") == "pending"
-        and not task.get("blocked_by_human", False)
-        and task_is_dependency_blocked(task, data)
-    ]
+    dependency_waiting = dependency_waiting_tasks(data)
     clean_idle = is_clean_idle_blocked(data)
     last_plan = latest_planning_event()
     attention = attention_required(data)

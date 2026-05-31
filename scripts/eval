@@ -1822,6 +1822,8 @@ def check_supervisor_loop() -> list[str]:
         failures.append("supervisor must log supervisor_cycle_summary events")
     if "attention_required" not in supervisor_text:
         failures.append("supervisor cycle summaries must surface the current attention_required signal")
+    if "suggested_action" not in supervisor_text:
+        failures.append("supervisor cycle summaries must surface the next suggested operator action")
     if "completed_task_ids" not in supervisor_text:
         failures.append("supervisor cycle summaries must surface which tasks finished in the cycle")
     if "next_task_id" not in supervisor_text:
@@ -2043,7 +2045,7 @@ def check_supervisor_cycle_summary() -> list[str]:
             return failures
 
         summary_line = (
-            "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=clean_idle attention_required=unblock afk_exit_status=0 "
+            "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=clean_idle attention_required=unblock suggested_action=unblock_human_task afk_exit_status=0 "
             "completed_count=1 completed_task_ids=AUTO-7 completed_task_titles='Add supervisor cycle outcome summaries' "
             "remaining_safe_tasks=0"
         )
@@ -2060,6 +2062,8 @@ def check_supervisor_cycle_summary() -> list[str]:
                 failures.append("supervisor_cycle_summary event did not record the expected cycle, clean-idle outcome, and afk exit status")
             if event.get("attention_required") != "unblock":
                 failures.append("supervisor_cycle_summary event did not record the expected attention_required signal for the clean-idle cycle")
+            if event.get("suggested_action") != "unblock_human_task":
+                failures.append("supervisor_cycle_summary event did not record the expected suggested action for the clean-idle cycle")
             if event.get("completed_task_ids") != ["AUTO-7"]:
                 failures.append("supervisor_cycle_summary event did not record the expected completed task ids for the clean-idle cycle")
             if event.get("completed_task_titles") != ["Add supervisor cycle outcome summaries"]:
@@ -2151,7 +2155,7 @@ def check_supervisor_cycle_next_task_summary() -> list[str]:
             return failures
 
         expected_line = (
-            "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=progress attention_required=none afk_exit_status=0 "
+            "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=progress attention_required=none suggested_action=execute_next_safe_task afk_exit_status=0 "
             "completed_count=1 completed_task_ids=AUTO-13 completed_task_titles='Finish first task' next_task_id=AUTO-14 "
             "next_task_title='Second queued task' remaining_safe_tasks=1"
         )
@@ -2168,6 +2172,8 @@ def check_supervisor_cycle_next_task_summary() -> list[str]:
                 failures.append("supervisor_cycle_summary event did not record the expected progress outcome and next task id")
             if event.get("attention_required") != "none":
                 failures.append("supervisor_cycle_summary event did not record the expected attention_required signal for the progress cycle")
+            if event.get("suggested_action") != "execute_next_safe_task":
+                failures.append("supervisor_cycle_summary event did not record the expected suggested action for the progress cycle")
             if event.get("completed_task_ids") != ["AUTO-13"]:
                 failures.append("supervisor_cycle_summary event did not record the expected completed task ids for the progress cycle")
             if event.get("completed_task_titles") != ["Finish first task"]:

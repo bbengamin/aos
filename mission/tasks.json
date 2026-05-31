@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T16:53:37Z",
+  "updated_at": "2026-05-31T17:01:14Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -729,7 +729,7 @@
       "id": "AUTO-28",
       "title": "Refine supervisor cycle outcome summaries batch 6",
       "theme": "supervisor",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -745,7 +745,10 @@
       "dependency_titles": [
         "Add supervisor cycle outcome summaries"
       ],
-      "planned_at": "2026-05-31T16:53:37Z"
+      "planned_at": "2026-05-31T16:53:37Z",
+      "started_at": "2026-05-31T16:57:43Z",
+      "completed_at": "2026-05-31T17:01:14Z",
+      "completion_summary": "added a shared supervisor `suggested_action` signal derived from the existing operator action model, surfaced it in `scripts/supervisor` cycle summary logs and console output, documented it in `README.md`, and extended `./scripts/eval` to verify the new summary behavior."
     },
     {
       "id": "AUTO-29",

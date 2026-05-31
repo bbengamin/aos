@@ -173,6 +173,16 @@ def pending_unblocked_tasks(data: dict) -> list[dict]:
     ]
 
 
+def dependency_waiting_tasks(data: dict) -> list[dict]:
+    return [
+        task
+        for task in data.get("tasks", [])
+        if task.get("status") == "pending"
+        and not task.get("blocked_by_human", False)
+        and task_is_dependency_blocked(task, data)
+    ]
+
+
 def is_clean_idle_blocked(data: dict) -> bool:
     return (
         current_in_progress_task(data) is None
@@ -194,6 +204,22 @@ def attention_required(data: dict) -> str:
     if blockers:
         return "unblock"
     return "none"
+
+
+def next_action(*, attention: str, current: dict | None, next_task: dict | None, dependency_waiting: list[dict]) -> str:
+    if attention == "review":
+        return "request_human_review"
+    if attention == "stale":
+        return "investigate_stale_work"
+    if attention == "unblock":
+        return "unblock_human_task"
+    if current:
+        return "continue_current"
+    if next_task:
+        return "execute_next_safe_task"
+    if dependency_waiting:
+        return "wait_on_dependencies"
+    return "idle"
 
 
 def pending_safe_tasks(data: dict) -> list[dict]:
