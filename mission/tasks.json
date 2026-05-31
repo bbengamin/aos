@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T13:30:01Z",
+  "updated_at": "2026-05-31T13:47:51Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -52,15 +52,30 @@
     {
       "id": "RISK-1",
       "title": "Review any task that adds external network calls",
+      "status": "done",
+      "priority": "medium",
+      "kind": "risk",
+      "safe": true,
+      "requires_human_review": false,
+      "blocked_by_human": false,
+      "blocker_reason": "Resolved by human approval for public outbound network calls without secrets.",
+      "done_condition": "A human explicitly approves the addition of external network calls and documents constraints.",
+      "notes": "Resolved narrowly: outbound network calls are allowed for public/open use with no secrets exposure.",
+      "completed_at": "2026-05-31T00:00:00Z",
+      "completion_summary": "Human approved outbound network calls for public/open-source use, with no secrets exposure or private authenticated access."
+    },
+    {
+      "id": "RISK-2",
+      "title": "Review authenticated or secret-bearing network integrations",
       "status": "pending",
       "priority": "medium",
       "kind": "risk",
       "safe": false,
       "requires_human_review": true,
       "blocked_by_human": true,
-      "blocker_reason": "Needs explicit human approval before any external network call is introduced.",
-      "done_condition": "A human explicitly approves the addition of external network calls and documents constraints.",
-      "notes": "Sentinel task used to verify review gates remain active."
+      "blocker_reason": "Anything involving secrets, auth, external writes, spending, deployment, or private systems still requires human approval.",
+      "done_condition": "A human explicitly approves the higher-risk network scope and documents constraints.",
+      "notes": "Replacement sentinel that preserves the constitution for higher-risk networked behavior."
     },
     {
       "id": "NEXT-1",
@@ -124,13 +139,16 @@
     {
       "id": "NEXT-5",
       "title": "Continue AFK runs past blocked tasks",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "kind": "improvement",
       "safe": true,
       "requires_human_review": false,
       "done_condition": "The episode runner records blocked tasks and keeps using remaining iterations on other safe work instead of stopping immediately.",
-      "notes": "This aligns AFK behavior with the expectation that blocked task 3 does not prevent tasks 4 and 5 from running."
+      "notes": "This aligns AFK behavior with the expectation that blocked task 3 does not prevent tasks 4 and 5 from running.",
+      "started_at": "2026-05-31T13:43:39Z",
+      "completed_at": "2026-05-31T13:47:51Z",
+      "completion_summary": "Added a real temp-repo integration check to `scripts/eval` that verifies `scripts/episode` records blocked tasks and continues using remaining iterations on later safe work instead of stopping immediately."
     }
   ]
 }

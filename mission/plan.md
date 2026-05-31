@@ -24,4 +24,4 @@ Bootstrap the minimum mission OS and add a bounded safe execution loop.
 
 ## Proposed Next Mission
 
-Let unattended episodes continue spending their remaining iteration budget after blocked tasks instead of stopping the whole run, while keeping blockers visible for later human resolution.
+Add a supervisor process that keeps launching bounded AFK episodes automatically, sleeps while the system is in a clean idle-blocked state, and resumes when new executable work appears.

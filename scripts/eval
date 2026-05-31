@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 
 import json
+import os
 from pathlib import Path
+import shutil
+import stat
 import subprocess
 import sys
+import tempfile
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -74,6 +78,28 @@ def check_completion_helper() -> list[str]:
     return []
 
 
+def no_executable_safe_task_is_expected() -> bool:
+    data = json.loads((ROOT / "mission" / "tasks.json").read_text())
+
+    current_safe = any(
+        task.get("status") == "in_progress"
+        and task.get("safe", False)
+        and not task.get("requires_human_review", False)
+        for task in data.get("tasks", [])
+    )
+    if current_safe:
+        return False
+
+    pending_safe = any(
+        task.get("status") == "pending"
+        and task.get("safe", False)
+        and not task.get("requires_human_review", False)
+        and not task.get("blocked_by_human", False)
+        for task in data.get("tasks", [])
+    )
+    return not pending_safe
+
+
 def check_next_task() -> list[str]:
     result = subprocess.run(
         [str(ROOT / "scripts" / "next-task")],
@@ -82,6 +108,8 @@ def check_next_task() -> list[str]:
         text=True,
     )
     if result.returncode != 0:
+        if result.stdout.strip() == "NO_SAFE_PENDING_TASK" and no_executable_safe_task_is_expected():
+            return []
         return [f"next-task failed: {result.stdout.strip()} {result.stderr.strip()}".strip()]
     if "done_condition:" not in result.stdout:
         return ["next-task output did not include a done condition"]
@@ -96,6 +124,8 @@ def check_execute_task() -> list[str]:
         text=True,
     )
     if result.returncode != 0:
+        if result.stdout.strip() == "NO_EXECUTABLE_TASK" and no_executable_safe_task_is_expected():
+            return []
         return [f"execute-task dry run failed: {result.stdout.strip()} {result.stderr.strip()}".strip()]
     if "READY_TO_EXECUTE" not in result.stdout:
         return ["execute-task dry run did not report READY_TO_EXECUTE"]
@@ -144,11 +174,15 @@ def check_blocker_model() -> list[str]:
         text=True,
     )
     if next_task_result.returncode != 0:
-        return [f"next-task failed while checking blockers: {next_task_result.stdout.strip()} {next_task_result.stderr.strip()}".strip()]
+        if next_task_result.stdout.strip() == "NO_SAFE_PENDING_TASK" and no_executable_safe_task_is_expected():
+            next_task_result = None
+        else:
+            return [f"next-task failed while checking blockers: {next_task_result.stdout.strip()} {next_task_result.stderr.strip()}".strip()]
 
-    selected_id = next_task_result.stdout.split(":", 1)[0].strip()
-    if selected_id in blocked_ids:
-        return ["next-task selected a blocked_by_human task"]
+    if next_task_result is not None:
+        selected_id = next_task_result.stdout.split(":", 1)[0].strip()
+        if selected_id in blocked_ids:
+            return ["next-task selected a blocked_by_human task"]
 
     result = subprocess.run(
         [str(ROOT / "scripts" / "status")],
@@ -197,6 +231,186 @@ def check_episode_completion_loop() -> list[str]:
     return failures
 
 
+def check_episode_blocker_continuation() -> list[str]:
+    if os.environ.get("AOS_SKIP_EPISODE_BEHAVIOR_CHECK") == "1":
+        return []
+
+    failures = []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+        tasks_data = {
+            "version": 1,
+            "updated_at": "2026-05-31T00:00:00Z",
+            "tasks": [
+                {
+                    "id": "DONE-1",
+                    "title": "Seed completed task",
+                    "status": "done",
+                    "priority": "low",
+                    "kind": "bootstrap",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "Seed completion evidence exists.",
+                    "completed_at": "2026-05-31T00:00:00Z",
+                    "completion_summary": "Seed completion evidence.",
+                },
+                {
+                    "id": "BLOCKED-0",
+                    "title": "Existing blocked task",
+                    "status": "pending",
+                    "priority": "low",
+                    "kind": "risk",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "Remain blocked.",
+                    "blocked_by_human": True,
+                    "blocker_reason": "Already waiting for human input.",
+                },
+                {
+                    "id": "REVIEW-1",
+                    "title": "Human review sentinel",
+                    "status": "pending",
+                    "priority": "medium",
+                    "kind": "risk",
+                    "safe": False,
+                    "requires_human_review": True,
+                    "done_condition": "Requires human review.",
+                },
+                {
+                    "id": "NEXT-1",
+                    "title": "First safe task blocks",
+                    "status": "pending",
+                    "priority": "high",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "Should be blocked during the test.",
+                },
+                {
+                    "id": "NEXT-2",
+                    "title": "Second safe task completes",
+                    "status": "pending",
+                    "priority": "medium",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "Should complete after the blocker.",
+                },
+                {
+                    "id": "NEXT-3",
+                    "title": "Later safe task remains available",
+                    "status": "pending",
+                    "priority": "low",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "Should remain pending so baseline eval checks still have executable work.",
+                },
+            ],
+        }
+        tasks_path.write_text(json.dumps(tasks_data, indent=2) + "\n")
+
+        execution_log_path = tmp_root / "mission" / "execution-log.ndjson"
+        execution_log_path.write_text(
+            json.dumps(
+                {
+                    "timestamp": "2026-05-31T00:00:00Z",
+                    "event": "completed",
+                    "task_id": "DONE-1",
+                    "title": "Seed completed task",
+                    "summary": "Seed completion evidence.",
+                }
+            )
+            + "\n"
+        )
+
+        bin_dir = Path(tmp_dir) / "bin"
+        bin_dir.mkdir()
+        counter_path = Path(tmp_dir) / "opencode-count"
+
+        opencode_path = bin_dir / "opencode"
+        opencode_path.write_text(
+            "#!/bin/sh\n"
+            f"COUNT_FILE=\"{counter_path}\"\n"
+            "count=0\n"
+            "if [ -f \"$COUNT_FILE\" ]; then\n"
+            "  count=$(cat \"$COUNT_FILE\")\n"
+            "fi\n"
+            "count=$((count + 1))\n"
+            "printf '%s' \"$count\" > \"$COUNT_FILE\"\n"
+            "if [ \"$count\" -eq 1 ]; then\n"
+            "  printf 'BLOCKED_BY_HUMAN: Need a human decision before continuing this slice.\\n'\n"
+            "elif [ \"$count\" -eq 2 ]; then\n"
+            "  printf 'COMPLETION_SUMMARY: Completed the next safe task after recording the blocker.\\n'\n"
+            "else\n"
+            "  printf 'BLOCKED_BY_HUMAN: Another task now needs human input, so only blocked work should remain.\\n'\n"
+            "fi\n"
+        )
+        opencode_path.chmod(opencode_path.stat().st_mode | stat.S_IXUSR)
+
+        git_path = bin_dir / "git"
+        git_path.write_text("#!/bin/sh\nexit 0\n")
+        git_path.chmod(git_path.stat().st_mode | stat.S_IXUSR)
+
+        env = os.environ.copy()
+        env["PATH"] = f"{bin_dir}{os.pathsep}{env.get('PATH', '')}"
+        env["MAX_ITERATIONS"] = "8"
+        env["AOS_SKIP_EPISODE_BEHAVIOR_CHECK"] = "1"
+
+        result = subprocess.run(
+            [str(tmp_root / "scripts" / "episode")],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+        if result.returncode != 0:
+            return [
+                "episode did not continue cleanly past a blocked task in the integration check: "
+                f"stdout={result.stdout.strip()} stderr={result.stderr.strip()}"
+            ]
+
+        if "Task blocked by human input request. Continuing to the next iteration." not in result.stdout:
+            failures.append("episode did not report continuing after a blocked task")
+
+        if counter_path.read_text().strip() != "3":
+            failures.append("episode did not keep invoking the agent after blocker and completion transitions")
+
+        updated_tasks = json.loads(tasks_path.read_text())
+        first_task = next(task for task in updated_tasks["tasks"] if task["id"] == "NEXT-1")
+        second_task = next(task for task in updated_tasks["tasks"] if task["id"] == "NEXT-2")
+        third_task = next(task for task in updated_tasks["tasks"] if task["id"] == "NEXT-3")
+
+        if not first_task.get("blocked_by_human", False) or first_task.get("status") != "pending":
+            failures.append("episode did not leave the blocked task pending with blocked_by_human=true")
+
+        if second_task.get("status") != "done":
+            failures.append("episode did not complete the later safe task after the blocker")
+
+        if not second_task.get("completion_summary"):
+            failures.append("episode did not record completion evidence for the later safe task")
+
+        if not third_task.get("blocked_by_human", False) or third_task.get("status") != "pending":
+            failures.append("episode did not keep later blocked work visible after continuing past a blocker")
+
+        events = [json.loads(line) for line in execution_log_path.read_text().splitlines() if line.strip()]
+        if not any(event.get("event") == "blocked_by_human" and event.get("task_id") == "NEXT-1" for event in events):
+            failures.append("episode did not log the blocked task event during continuation")
+
+        if not any(event.get("event") == "completed" and event.get("task_id") == "NEXT-2" for event in events):
+            failures.append("episode did not log completion for the later safe task")
+
+        if not any(event.get("event") == "blocked_by_human" and event.get("task_id") == "NEXT-3" for event in events):
+            failures.append("episode did not log the later blocker after continuing to more work")
+
+    return failures
+
+
 def main() -> int:
     failures = []
     failures.extend(check_files())
@@ -210,6 +424,7 @@ def main() -> int:
     failures.extend(check_blocker_model())
     failures.extend(check_blocker_commands())
     failures.extend(check_episode_completion_loop())
+    failures.extend(check_episode_blocker_continuation())
 
     if failures:
         print("EVAL_FAIL")

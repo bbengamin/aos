@@ -159,6 +159,24 @@ Checks expected:
 - the runner can treat blocked tasks as non-fatal and continue with later safe work
 - prompt and runner both support `BLOCKED_BY_HUMAN:` as a structured blocker signal
 
+## 2026-05-31 - Narrow network approval recorded
+
+Checks expected:
+
+- `RISK-1` is resolved as a documented narrow approval
+- a replacement sentinel keeps higher-risk network integrations blocked
+- the documented approval excludes secrets, auth, private systems, spending, deployment, and external write actions
+
+Result:
+
+- `RISK-1` is resolved as a narrow public-network approval
+- `RISK-2` remains blocked for authenticated, secret-bearing, or write-capable integrations
+- `./scripts/eval` returns `EVAL_PASS` with `NEXT none` and `BLOCKERS 1`
+
+Outcome:
+
+The repository now treats "only blocked work remains" as a valid idle state instead of a failure.
+
 ## 2026-05-31 - Human blocker workflow eval
 
 Command:

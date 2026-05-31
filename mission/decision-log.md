@@ -153,3 +153,17 @@ Consequences:
 - the runner treats `BLOCKED_BY_HUMAN:` as a structured non-fatal outcome
 - blocked work is recorded and skipped in later selections
 - AFK runs end only when the executable queue is exhausted repeatedly or a real failure occurs
+
+## 2026-05-31 - Approve narrow public outbound network calls
+
+Decision:
+Approve outbound network calls for public/open-source use, as long as they do not require secrets, authenticated access, private data, spending, deployment, or external write actions.
+
+Why:
+The system needs a safe path toward notification and public status/reporting features, and the human explicitly approved that narrow scope.
+
+Consequences:
+
+- public outbound calls are no longer blocked in principle
+- higher-risk integrations remain review-gated under a new risk sentinel
+- the constitution still blocks secrets, private systems, spending, deployment, and production mutation

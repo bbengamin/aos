@@ -38,3 +38,14 @@ Mitigation:
 - `scripts/episode` is bounded by `MAX_ITERATIONS`
 - the loop exits on eval failure instead of silently churning
 - the loop exits on human-review-required tasks
+
+### 2026-05-31 - Safe public networking vs higher-risk integrations
+
+Risk:
+Allowing all network activity would blur the line between safe public notifications and higher-risk authenticated integrations.
+
+Mitigation:
+
+- public outbound network calls are approved only in the narrow open/no-secrets scope
+- any authenticated, secret-bearing, write-capable, or private-system integration remains human-review-gated
+- a dedicated sentinel task (`RISK-2`) preserves that review boundary
