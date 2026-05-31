@@ -326,3 +326,7 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
         candidates.append(candidate)
 
     return candidates
+
+
+def planner_batch_consumers(candidates: list[dict]) -> list[dict]:
+    return [candidate for candidate in candidates if candidate.get("status") == "eligible"][:PLANNER_BATCH_SIZE]
