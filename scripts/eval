@@ -135,6 +135,8 @@ def check_dependency_metadata() -> list[str]:
         failures.append("tasklib must define dependency-aware task blocking")
     if "DEPENDENCY_WAITING" not in status_text:
         failures.append("status must report dependency-waiting tasks")
+    if "REVIEW_WAITING" not in status_text:
+        failures.append("status must report review-waiting tasks")
     return failures
 
 
@@ -259,7 +261,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE active", "CLEAN_IDLE_BLOCKED no", "CURRENT ACTIVE-1", "PLANNED_WORK 0", "BLOCKERS 0"],
+                ["STATE active", "CLEAN_IDLE_BLOCKED no", "CURRENT ACTIVE-1", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0"],
             ),
             (
                 "planned",
@@ -280,7 +282,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE planned", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT AUTO-1", "PLANNED_WORK 1", "PLANNED AUTO-1", "BLOCKERS 0"],
+                ["STATE planned", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT AUTO-1", "PLANNED_WORK 1", "PLANNED AUTO-1", "BLOCKERS 0", "REVIEW_WAITING 0"],
             ),
             (
                 "clean_idle_blocked",
@@ -302,7 +304,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE clean_idle_blocked", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1"],
+                ["STATE clean_idle_blocked", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 0"],
             ),
             (
                 "blocked",
@@ -334,7 +336,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE blocked", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1"],
+                ["STATE blocked", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 1", "REVIEW REVIEW-1"],
             ),
         ]
 

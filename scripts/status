@@ -67,6 +67,11 @@ def main() -> int:
     next_task = next_safe_task(data)
     planned = pending_safe_tasks(data)
     blockers = blocked_tasks(data)
+    review_waiting = [
+        task
+        for task in data.get("tasks", [])
+        if task.get("status") == "pending" and task.get("requires_human_review", False)
+    ]
     dependency_waiting = [
         task
         for task in data.get("tasks", [])
@@ -123,6 +128,10 @@ def main() -> int:
             print_task("BLOCKED ", task)
     else:
         print("BLOCKERS 0")
+
+    print(f"REVIEW_WAITING {len(review_waiting)}")
+    for task in review_waiting:
+        print_task("REVIEW ", task)
 
     print(f"DEPENDENCY_WAITING {len(dependency_waiting)}")
     for task in dependency_waiting:

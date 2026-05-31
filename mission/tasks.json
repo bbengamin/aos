@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T15:41:12Z",
+  "updated_at": "2026-05-31T15:43:45Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -404,7 +404,7 @@
       "id": "AUTO-15",
       "title": "Refine operator status summaries batch 1",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -420,7 +420,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T15:34:08Z"
+      "planned_at": "2026-05-31T15:34:08Z",
+      "started_at": "2026-05-31T15:41:22Z",
+      "completed_at": "2026-05-31T15:43:45Z",
+      "completion_summary": "Added a separate `REVIEW_WAITING` section to `scripts/status` so review-gated tasks are distinct from human-blocked work, updated eval coverage for the new operator signal, and documented the refined status view in `README.md`."
     }
   ]
 }
