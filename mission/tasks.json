@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T19:19:47Z",
+  "updated_at": "2026-05-31T19:22:56Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -904,7 +904,7 @@
       "id": "AUTO-35",
       "title": "Refine planner backlog generation heuristics batch 8",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -920,7 +920,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T19:08:20Z"
+      "planned_at": "2026-05-31T19:08:20Z",
+      "started_at": "2026-05-31T19:20:00Z",
+      "completed_at": "2026-05-31T19:22:56Z",
+      "completion_summary": "Added resolved planner prerequisite `dependency_ids` to `./scripts/planner-candidates`, documented the new audit signal in `README.md`, and extended `./scripts/eval` to verify the richer planner dependency explanations."
     },
     {
       "id": "AUTO-36",

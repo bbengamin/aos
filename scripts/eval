@@ -1364,6 +1364,7 @@ def check_planner_candidate_audit_command() -> list[str]:
             "  reason: planner_gate_has_executable_safe_tasks",
             "  planner_gate_task_ids: AUTO-4",
             "  planner_gate_task_titles: Add planner backlog breadth limits",
+            "  dependency_ids: AUTO-1",
             "BLOCKED Add task dependency metadata for planned work",
             "  reason: waiting_on_done_titles",
             "  missing_required_titles: Add planner backlog breadth limits",
@@ -1487,6 +1488,7 @@ def check_planner_candidate_theme_limit_explanations() -> list[str]:
         for expected in [
             "BLOCKED Refine planner backlog generation heuristics batch 1",
             "  reason: theme_open_limit_reached",
+            "  dependency_ids: AUTO-4",
             "  theme_open_tasks: 1",
             "  theme_open_task_ids: AUTO-5",
             "  theme_open_task_titles: Existing planner refinement already in progress",
@@ -1622,8 +1624,11 @@ def check_planner_candidate_batch_limit_explanations() -> list[str]:
         failures = []
         for expected in [
             "ELIGIBLE Add planner backlog breadth limits",
+            "  dependency_ids: AUTO-2",
             "ELIGIBLE Add stale-work status indicators",
+            "  dependency_ids: AUTO-3",
             "ELIGIBLE Refine supervisor cycle outcome summaries batch 1",
+            "  dependency_ids: AUTO-4",
             "BLOCKED Harden eval coverage for planner and supervisor loops batch 1",
             "  reason: planner_batch_full",
             "  planner_batch_task_titles: Add planner backlog breadth limits, Add stale-work status indicators, Refine supervisor cycle outcome summaries batch 1",

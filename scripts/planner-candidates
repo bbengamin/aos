@@ -23,6 +23,10 @@ def print_candidate(candidate: dict) -> None:
     if dependency_titles:
         print(f"  dependencies: {', '.join(dependency_titles)}")
 
+    dependency_ids = candidate.get("dependency_ids", [])
+    if dependency_ids:
+        print(f"  dependency_ids: {', '.join(dependency_ids)}")
+
     missing_titles = candidate.get("missing_required_titles", [])
     if missing_titles:
         print(f"  missing_required_titles: {', '.join(missing_titles)}")
