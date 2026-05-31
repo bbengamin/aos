@@ -29,6 +29,8 @@ REQUIRED_FILES = [
     "scripts/next-task",
     "scripts/tasklib.py",
     "scripts/plan-next",
+    "scripts/plannerlib.py",
+    "scripts/planner-candidates",
     "scripts/execute-task",
     "scripts/complete-task",
     "scripts/block-task",
@@ -366,6 +368,8 @@ def check_status_last_plan_summary() -> list[str]:
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_root = Path(tmp_dir) / "repo"
         shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+        planner_candidates_path = tmp_root / "scripts" / "planner-candidates"
+        planner_candidates_path.chmod(planner_candidates_path.stat().st_mode | stat.S_IXUSR)
 
         tasks_path = tmp_root / "mission" / "tasks.json"
         tasks_path.write_text(
@@ -433,6 +437,8 @@ def check_status_stale_work_indicators() -> list[str]:
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_root = Path(tmp_dir) / "repo"
         shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+        planner_candidates_path = tmp_root / "scripts" / "planner-candidates"
+        planner_candidates_path.chmod(planner_candidates_path.stat().st_mode | stat.S_IXUSR)
 
         tasks_path = tmp_root / "mission" / "tasks.json"
         tasks_path.write_text(
@@ -510,6 +516,8 @@ def check_blocker_commands() -> list[str]:
 
 def check_planning_loop() -> list[str]:
     planner_text = (ROOT / "scripts" / "plan-next").read_text()
+    plannerlib_text = (ROOT / "scripts" / "plannerlib.py").read_text()
+    planner_audit_text = (ROOT / "scripts" / "planner-candidates").read_text()
     episode_text = (ROOT / "scripts" / "episode").read_text()
 
     failures = []
@@ -519,10 +527,14 @@ def check_planning_loop() -> list[str]:
         failures.append("plan-next must log planned_next_tasks events")
     if "planning_reason" not in planner_text:
         failures.append("plan-next must record planning_reason for generated tasks")
-    if "PLANNER_THEME_OPEN_LIMIT" not in planner_text:
-        failures.append("plan-next must define a planner theme breadth limit")
-    if 'theme_counts.get(template["theme"], 0) >= PLANNER_THEME_OPEN_LIMIT' not in planner_text:
+    if "PLANNER_THEME_OPEN_LIMIT" not in plannerlib_text:
+        failures.append("plannerlib must define a planner theme breadth limit")
+    if 'theme_counts.get(template["theme"], 0) >= PLANNER_THEME_OPEN_LIMIT' not in plannerlib_text:
         failures.append("plan-next must limit how many open tasks one planner theme can contribute at once")
+    if "audit_planner_candidates" not in planner_text:
+        failures.append("plan-next must use shared planner candidate audit logic")
+    if 'for status in ("covered", "eligible", "blocked")' not in planner_audit_text:
+        failures.append("planner-candidates must summarize covered, eligible, and blocked planner candidates")
     if "PLAN_NEXT" not in episode_text:
         failures.append("episode must wire in plan-next")
     if "PLANNING_COMPLETED" not in episode_text:
@@ -537,6 +549,8 @@ def check_plan_next_generates_tasks() -> list[str]:
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_root = Path(tmp_dir) / "repo"
         shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+        planner_candidates_path = tmp_root / "scripts" / "planner-candidates"
+        planner_candidates_path.chmod(planner_candidates_path.stat().st_mode | stat.S_IXUSR)
 
         tasks_path = tmp_root / "mission" / "tasks.json"
         tasks_data = {
@@ -1106,6 +1120,120 @@ def check_plan_next_limits_theme_breadth() -> list[str]:
     return []
 
 
+def check_planner_candidate_audit_command() -> list[str]:
+    if os.environ.get("AOS_SKIP_PLAN_NEXT_CHECK") == "1":
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+        planner_candidates_path = tmp_root / "scripts" / "planner-candidates"
+        planner_candidates_path.chmod(planner_candidates_path.stat().st_mode | stat.S_IXUSR)
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+        tasks_data = {
+            "version": 1,
+            "updated_at": "2026-05-31T00:00:00Z",
+            "tasks": [
+                {
+                    "id": "AUTO-1",
+                    "title": "Add supervisor daemon for repeated AFK episodes",
+                    "theme": "supervisor",
+                    "status": "done",
+                    "priority": "high",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "A local daemon script can launch bounded AFK episodes repeatedly, sleep in clean idle-blocked state, and resume when executable work appears.",
+                    "completed_at": "2026-05-31T00:00:00Z",
+                    "completion_summary": "Already completed.",
+                },
+                {
+                    "id": "AUTO-2",
+                    "title": "Add planner-generated task reporting",
+                    "theme": "planner",
+                    "status": "done",
+                    "priority": "medium",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "The system records when and why new tasks were generated so humans can review planning decisions after AFK runs.",
+                    "completed_at": "2026-05-31T00:00:00Z",
+                    "completion_summary": "Already completed.",
+                },
+                {
+                    "id": "AUTO-3",
+                    "title": "Add idle-state status summary command",
+                    "theme": "status",
+                    "status": "done",
+                    "priority": "medium",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "A status summary can distinguish active work, planned work, blocked work, and clean idle-blocked state in one command.",
+                    "completed_at": "2026-05-31T00:00:00Z",
+                    "completion_summary": "Already completed.",
+                },
+                {
+                    "id": "AUTO-4",
+                    "title": "Add planner backlog breadth limits",
+                    "theme": "planner",
+                    "status": "pending",
+                    "priority": "medium",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "The planner can rotate through multiple safe improvement themes without re-adding covered work or flooding the queue with one theme.",
+                    "planning_reason": "Already in the queue.",
+                },
+                {
+                    "id": "RISK-ONLY",
+                    "title": "Only blocked risk remains",
+                    "status": "pending",
+                    "priority": "medium",
+                    "kind": "risk",
+                    "safe": False,
+                    "requires_human_review": True,
+                    "blocked_by_human": True,
+                    "done_condition": "Remain blocked.",
+                    "blocker_reason": "Still waiting for human approval.",
+                },
+            ],
+        }
+        tasks_path.write_text(json.dumps(tasks_data, indent=2) + "\n")
+
+        env = os.environ.copy()
+        env["AOS_SKIP_PLAN_NEXT_CHECK"] = "1"
+        env.pop("AOS_MAX_AUTO_TASKS", None)
+
+        result = subprocess.run(
+            [str(planner_candidates_path)],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        if result.returncode != 0:
+            return [f"planner-candidates failed in integration check: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+
+        failures = []
+        for expected in [
+            "PLANNER_GATE blocked",
+            "planner_gate_reason: executable safe tasks already exist (1)",
+            "COVERED_COUNT ",
+            "ELIGIBLE_COUNT ",
+            "BLOCKED_COUNT ",
+            "COVERED Add planner backlog breadth limits",
+            "ELIGIBLE Add supervisor cycle outcome summaries",
+            "BLOCKED Add task dependency metadata for planned work",
+            "  reason: waiting_on_done_titles",
+            "  missing_required_titles: Add planner backlog breadth limits",
+        ]:
+            if expected not in result.stdout:
+                failures.append(f"planner-candidates did not report {expected!r} in the integration check")
+        return failures
+
+
 def check_episode_completion_loop() -> list[str]:
     episode_text = (ROOT / "scripts" / "episode").read_text()
     prompt_text = (ROOT / "mission" / "bootstrap-prompt.txt").read_text()
@@ -1636,6 +1764,7 @@ def main() -> int:
     failures.extend(check_plan_next_skips_duplicate_templates())
     failures.extend(check_plan_next_progresses_beyond_initial_templates())
     failures.extend(check_plan_next_limits_theme_breadth())
+    failures.extend(check_planner_candidate_audit_command())
     failures.extend(check_episode_completion_loop())
     failures.extend(check_episode_blocker_continuation())
     failures.extend(check_supervisor_loop())

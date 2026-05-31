@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+
+import sys
+
+from plannerlib import audit_planner_candidates, planner_max_auto_tasks
+from tasklib import load_tasks, pending_safe_tasks
+
+
+def print_candidate(candidate: dict) -> None:
+    print(f"{candidate['status'].upper()} {candidate['title']}")
+    print(f"  theme: {candidate['theme']}")
+    print(f"  reason: {candidate['reason']}")
+    print(f"  done_condition: {candidate['done_condition']}")
+    print(f"  planning_reason: {candidate['planning_reason']}")
+
+    dependency_titles = candidate.get("dependency_titles", [])
+    if dependency_titles:
+        print(f"  dependencies: {', '.join(dependency_titles)}")
+
+    missing_titles = candidate.get("missing_required_titles", [])
+    if missing_titles:
+        print(f"  missing_required_titles: {', '.join(missing_titles)}")
+
+    if "theme_open_tasks" in candidate:
+        print(f"  theme_open_tasks: {candidate['theme_open_tasks']}")
+
+
+def main() -> int:
+    data = load_tasks()
+    candidates = audit_planner_candidates(data, max_auto_tasks=planner_max_auto_tasks())
+    pending = pending_safe_tasks(data)
+
+    if pending:
+        print("PLANNER_GATE blocked")
+        print(f"planner_gate_reason: executable safe tasks already exist ({len(pending)})")
+    else:
+        print("PLANNER_GATE ready")
+
+    print(f"CANDIDATES {len(candidates)}")
+    for status in ("covered", "eligible", "blocked"):
+        print(f"{status.upper()}_COUNT {sum(1 for candidate in candidates if candidate['status'] == status)}")
+
+    for candidate in candidates:
+        print_candidate(candidate)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

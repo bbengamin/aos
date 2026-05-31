@@ -50,6 +50,7 @@ It is intentionally file-first:
 - `./scripts/block-task`: mark a task blocked with a human reason
 - `./scripts/unblock-task`: clear a blocker with a human resolution note
 - `./scripts/plan-next`: generate the next 1-3 safe tasks when the executable queue is empty
+- `./scripts/planner-candidates`: audit the planner catalog and explain which candidates are already covered, eligible now, or blocked
 - `./scripts/eval`: runs the minimum bootstrap checks
 
 ## Working Rules
@@ -94,6 +95,14 @@ To see where human action is needed:
 ```
 
 The place to look for blockers is `mission/tasks.json`, and the quickest human-readable view is `./scripts/status`. That command now reports a single overall `STATE`, whether the repo is in `CLEAN_IDLE_BLOCKED` mode, the current executable task, the planned safe backlog, the latest planner event with its rationale, the blocked queue, dependency-waiting tasks, and stale-work counters. `./scripts/next-task` skips any pending task whose `depends_on_task_ids` still point at unfinished work, while `./scripts/status` surfaces those items under `DEPENDENCY_WAITING` together with their human-readable `dependency_titles`. `STALE_IN_PROGRESS` highlights work that has been in progress for more than a day, while `LONG_BLOCKED` highlights tasks that have been blocked by humans for more than three days. `STATE blocked` means blockers exist but the repo is not in the clean idle-blocked state because some other pending work still exists, usually a review-gated risk task.
+
+To inspect the full planner catalog and see why each candidate would be chosen or skipped:
+
+```bash
+./scripts/planner-candidates
+```
+
+That audit uses the same eligibility logic as `./scripts/plan-next`, so its covered, eligible, and blocked reasons match the planner's actual behavior.
 
 To block one task and keep the loop working on others:
 
