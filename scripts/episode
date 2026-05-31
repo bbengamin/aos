@@ -63,6 +63,11 @@ def main() -> int:
             print("No executable safe task available.")
             return 1
 
+        status = run([str(EXECUTE_TASK)], allow_failure=True)
+        if status not in (0,):
+            print("Episode stopped: unable to start the selected task.")
+            return status
+
         prompt = PROMPT_PATH.read_text()
         agent_run = run_capture(["opencode", "run", prompt], allow_failure=False)
         completion_summary = extract_completion_summary(agent_run.stdout)
