@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T19:22:56Z",
+  "updated_at": "2026-05-31T19:26:36Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -929,7 +929,7 @@
       "id": "AUTO-36",
       "title": "Refine operator status summaries batch 8",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -945,7 +945,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T19:08:20Z"
+      "planned_at": "2026-05-31T19:08:20Z",
+      "started_at": "2026-05-31T19:23:09Z",
+      "completed_at": "2026-05-31T19:26:36Z",
+      "completion_summary": "added a top-level `QUEUE_HEALTH` status signal to `./scripts/status`, extended `./scripts/eval` with queue-health assertions across active/planned/blocked/dependency/stale scenarios, and documented the new backlog-shape summary in `README.md`"
     }
   ]
 }
