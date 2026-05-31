@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T19:50:30Z",
+  "updated_at": "2026-05-31T19:54:11Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -1154,7 +1154,7 @@
       "id": "AUTO-45",
       "title": "Refine operator status summaries batch 11",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -1170,7 +1170,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T19:45:54Z"
+      "planned_at": "2026-05-31T19:45:54Z",
+      "started_at": "2026-05-31T19:50:44Z",
+      "completed_at": "2026-05-31T19:54:11Z",
+      "completion_summary": "added a top-level `NEXT_STEP` signal to `./scripts/status` so operator summaries show the recommended action and its target task on one line, extended `./scripts/eval` with matching status assertions, and documented the new status hint in `README.md`"
     }
   ]
 }

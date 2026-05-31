@@ -79,6 +79,12 @@ def work_inventory(
     )
 
 
+def next_step_summary(action: str, task: dict | None) -> str:
+    if not task:
+        return action
+    return f"{action} {task['id']}: {task['title']}"
+
+
 def main() -> int:
     data = load_tasks()
 
@@ -128,6 +134,9 @@ def main() -> int:
     print(f"ATTENTION_REQUIRED {attention}")
     print(
         f"NEXT_ACTION {next_action(attention=attention, current=current, next_task=next_task, dependency_waiting=dependency_waiting)}"
+    )
+    print(
+        f"NEXT_STEP {next_step_summary(next_action(attention=attention, current=current, next_task=next_task, dependency_waiting=dependency_waiting), next_action_task_item)}"
     )
     print(
         f"WAITING_ON {waiting_on(review_waiting=review_waiting, blockers=blockers, dependency_waiting=dependency_waiting)}"
