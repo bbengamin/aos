@@ -27,6 +27,7 @@ REQUIRED_FILES = [
     "scripts/execute-task",
     "scripts/complete-task",
     "scripts/episode",
+    "scripts/afk",
     "scripts/eval",
 ]
 

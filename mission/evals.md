@@ -82,3 +82,19 @@ Result:
 Outcome:
 
 The repository can now explicitly close one in-progress safe task with durable evidence of what changed.
+
+## 2026-05-31 - AFK wrapper eval
+
+Command:
+
+```bash
+./scripts/afk 1
+./scripts/eval
+```
+
+Checks expected:
+
+- `scripts/afk` accepts an iteration count as a positional argument
+- it writes a timestamped log file under `logs/`
+- it returns the same exit status as `scripts/episode`
+- eval still returns `EVAL_PASS`

@@ -83,3 +83,17 @@ Consequences:
 - task closure stays inspectable and intentional
 - `mission/tasks.json` now carries a `completion_summary` for completed work
 - the next missing capability is wiring completion into the bounded episode loop
+
+## 2026-05-31 - Add a thin AFK entrypoint instead of expanding the episode runner
+
+Decision:
+Provide unattended execution through `scripts/afk` as a small shell wrapper around `scripts/episode`.
+
+Why:
+The user needs a one-command entrypoint. A thin wrapper keeps the execution logic in one place while adding timestamps and logs for AFK runs.
+
+Consequences:
+
+- `scripts/episode` remains the core loop
+- `scripts/afk` handles log file creation and clearer exit messaging
+- unattended runs stay easy to inspect after the fact
