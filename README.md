@@ -46,7 +46,7 @@ It is intentionally file-first:
 - `./scripts/afk`: runs `episode` with timestamped logging for unattended sessions
 - `./scripts/afk-log-index`: lists recent `logs/afk-*.log` files with parsed timestamps, last-task context, and best-effort outcomes
 - `./scripts/supervisor`: relaunches bounded AFK episodes, sleeps while work is cleanly idle-blocked, resumes when executable work appears, and records a structured summary for each AFK cycle
-- `./scripts/status`: summarizes whether the system is active, planned, blocked, or cleanly idle-blocked, explains that top-level state with `STATE_REASON`, adds a compact `STATUS_POSTURE` signal for mixed active-vs-waiting conditions, shows top-level `WORK_INVENTORY`, `QUEUE_HEALTH`, and `HUMAN_INPUT_QUEUE` summaries, an `ATTENTION_REQUIRED` signal, a concrete `NEXT_ACTION`, a combined `NEXT_STEP` action-plus-target hint, a top-level `WAITING_ON` cause plus `WAITING_ON_TASK`, the specific `ATTENTION_TASK`, current work, planned work, human blockers, review-gated work, dependency-waiting work, and flags stale work
+- `./scripts/status`: summarizes whether the system is active, planned, blocked, or cleanly idle-blocked, explains that top-level state with `STATE_REASON`, adds a compact `STATUS_POSTURE` signal for mixed active-vs-waiting conditions, shows top-level `WORK_INVENTORY`, `QUEUE_HEALTH`, `HUMAN_INPUT_QUEUE`, and `WAITING_QUEUE` summaries, an `ATTENTION_REQUIRED` signal, a concrete `NEXT_ACTION`, a combined `NEXT_STEP` action-plus-target hint, a top-level `WAITING_ON` cause plus `WAITING_ON_TASK`, the specific `ATTENTION_TASK`, current work, planned work, human blockers, review-gated work, dependency-waiting work, and flags stale work
 - `./scripts/block-task`: mark a task blocked with a human reason
 - `./scripts/unblock-task`: clear a blocker with a human resolution note
 - `./scripts/plan-next`: generate the next 1-3 safe tasks when the executable queue is empty
@@ -109,6 +109,8 @@ The place to look for blockers is `mission/tasks.json`, and the quickest human-r
 `QUEUE_HEALTH` is the compact backlog-shape signal on that status view. It reports labels like `ready_backlog`, `mixed_ready_and_dependencies`, `review_waiting`, `blocked_only`, `stale_active`, or `dependency_waiting_only` so humans can tell whether the queue is mostly actionable, mostly waiting, or already drifting stale without scanning the full detailed sections first.
 
 `HUMAN_INPUT_QUEUE` is the matching human-wait summary. It reports `review=<n> blocked=<n> total=<n>` so humans can quickly see how much pending work is paused on review gates versus unblock decisions.
+
+`WAITING_QUEUE` is the broader wait summary on that same status view. It reports `review=<n> blocked=<n> dependencies=<n> total=<n>` so humans can see the full non-executable queue shape in one line, including work that is paused only on unfinished task dependencies.
 
 `EXECUTABLE_SAFE_TASKS` is the matching readiness count. It reports how many safe tasks are runnable right now, so humans can distinguish between a large total backlog and the smaller subset the loop can actually act on immediately.
 

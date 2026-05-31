@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T20:35:32Z",
+  "updated_at": "2026-05-31T20:38:39Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -1454,7 +1454,7 @@
       "id": "AUTO-57",
       "title": "Refine operator status summaries batch 15",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -1470,7 +1470,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T20:28:58Z"
+      "planned_at": "2026-05-31T20:28:58Z",
+      "started_at": "2026-05-31T20:35:47Z",
+      "completed_at": "2026-05-31T20:38:39Z",
+      "completion_summary": "added a top-level `WAITING_QUEUE` signal to `./scripts/status`, backed it with shared `scripts/tasklib.py` logic, extended `./scripts/eval` coverage across active/planned/blocked/dependency/stale scenarios, and documented the new full wait-queue summary in `README.md`"
     }
   ]
 }

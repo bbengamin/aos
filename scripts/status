@@ -30,6 +30,7 @@ from tasklib import (
     status_posture,
     task_is_dependency_blocked,
     unresolved_dependency_ids,
+    waiting_queue,
     waiting_on,
     waiting_on_task,
 )
@@ -137,6 +138,9 @@ def main() -> int:
         f"QUEUE_HEALTH {queue_health(current=current, planned=planned, blockers=blockers, review_waiting=review_waiting, dependency_waiting=dependency_waiting)}"
     )
     print(f"HUMAN_INPUT_QUEUE {human_input_queue(review_waiting=review_waiting, blockers=blockers)}")
+    print(
+        f"WAITING_QUEUE {waiting_queue(review_waiting=review_waiting, blockers=blockers, dependency_waiting=dependency_waiting)}"
+    )
     print(f"EXECUTABLE_SAFE_TASKS {executable_safe_task_count(data)}")
     print(f"ATTENTION_REQUIRED {attention}")
     print(
