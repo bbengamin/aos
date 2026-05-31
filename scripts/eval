@@ -263,7 +263,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE active", "ATTENTION_REQUIRED none", "CLEAN_IDLE_BLOCKED no", "CURRENT ACTIVE-1", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0"],
+                ["STATE active", "ATTENTION_REQUIRED none", "ATTENTION_TASK none", "CLEAN_IDLE_BLOCKED no", "CURRENT ACTIVE-1", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0"],
             ),
             (
                 "planned",
@@ -284,7 +284,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE planned", "ATTENTION_REQUIRED none", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT AUTO-1", "PLANNED_WORK 1", "PLANNED AUTO-1", "BLOCKERS 0", "REVIEW_WAITING 0"],
+                ["STATE planned", "ATTENTION_REQUIRED none", "ATTENTION_TASK none", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT AUTO-1", "PLANNED_WORK 1", "PLANNED AUTO-1", "BLOCKERS 0", "REVIEW_WAITING 0"],
             ),
             (
                 "clean_idle_blocked",
@@ -306,7 +306,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE clean_idle_blocked", "ATTENTION_REQUIRED unblock", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 0"],
+                ["STATE clean_idle_blocked", "ATTENTION_REQUIRED unblock", "ATTENTION_TASK BLOCKED-1: Waiting on human unblock", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 0"],
             ),
             (
                 "blocked",
@@ -338,7 +338,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE blocked", "ATTENTION_REQUIRED review", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 1", "REVIEW REVIEW-1"],
+                ["STATE blocked", "ATTENTION_REQUIRED review", "ATTENTION_TASK REVIEW-1: Pending human review gate", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 1", "REVIEW REVIEW-1"],
             ),
         ]
 
@@ -495,6 +495,7 @@ def check_status_stale_work_indicators() -> list[str]:
         failures = []
         for expected in [
             "ATTENTION_REQUIRED stale",
+            "ATTENTION_TASK ACTIVE-STALE-1: Old in-progress task",
             "STALE_IN_PROGRESS 1",
             "STALE CURRENT ACTIVE-STALE-1: Old in-progress task",
             "LONG_BLOCKED 1",

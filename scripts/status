@@ -62,6 +62,21 @@ def overall_state(*, current: dict | None, planned: list[dict], blockers: list[d
     return "idle"
 
 
+def attention_task(*, attention: str, current: dict | None, review_waiting: list[dict], blockers: list[dict]) -> dict | None:
+    if attention == "review":
+        return review_waiting[0] if review_waiting else None
+    if attention == "stale":
+        if current and is_stale_in_progress_task(current):
+            return current
+        for task in blockers:
+            if is_long_blocked_task(task):
+                return task
+        return None
+    if attention == "unblock":
+        return blockers[0] if blockers else None
+    return None
+
+
 def main() -> int:
     data = load_tasks()
 
@@ -79,11 +94,22 @@ def main() -> int:
     ]
     clean_idle = is_clean_idle_blocked(data)
     last_plan = latest_planning_event()
+    attention = attention_required(data)
+    attention_task_item = attention_task(
+        attention=attention,
+        current=current,
+        review_waiting=review_waiting,
+        blockers=blockers,
+    )
 
     print(
         f"STATE {overall_state(current=current, planned=planned, blockers=blockers, dependency_waiting=dependency_waiting, clean_idle=clean_idle)}"
     )
-    print(f"ATTENTION_REQUIRED {attention_required(data)}")
+    print(f"ATTENTION_REQUIRED {attention}")
+    if attention_task_item:
+        print(f"ATTENTION_TASK {attention_task_item['id']}: {attention_task_item['title']}")
+    else:
+        print("ATTENTION_TASK none")
     print(f"CLEAN_IDLE_BLOCKED {'yes' if clean_idle else 'no'}")
 
     if current:

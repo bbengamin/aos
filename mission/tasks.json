@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T15:59:19Z",
+  "updated_at": "2026-05-31T16:01:49Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -554,7 +554,7 @@
       "id": "AUTO-21",
       "title": "Refine operator status summaries batch 3",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -570,7 +570,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T15:52:11Z"
+      "planned_at": "2026-05-31T15:52:11Z",
+      "started_at": "2026-05-31T15:59:30Z",
+      "completed_at": "2026-05-31T16:01:49Z",
+      "completion_summary": "Added a concrete `ATTENTION_TASK` line to `scripts/status` so the top-level attention signal points at the specific review, unblock, or stale task needing operator focus, and updated `./scripts/eval` plus README coverage for the new status signal."
     }
   ]
 }
