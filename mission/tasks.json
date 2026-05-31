@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T14:18:32Z",
+  "updated_at": "2026-05-31T14:21:07Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -230,7 +230,7 @@
     {
       "id": "AUTO-6",
       "title": "Add idle-state status summary command",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -238,7 +238,10 @@
       "done_condition": "A status summary can distinguish active work, planned work, blocked work, and clean idle-blocked state in one command.",
       "notes": "Helps humans quickly understand whether the system is waiting or working.",
       "planning_reason": "Once planning and supervision exist, humans need a single status view that explains whether the system is actively working, waiting on a blocker, or cleanly idle.",
-      "planned_at": "2026-05-31T14:13:51Z"
+      "planned_at": "2026-05-31T14:13:51Z",
+      "started_at": "2026-05-31T14:18:37Z",
+      "completed_at": "2026-05-31T14:21:07Z",
+      "completion_summary": "Fixed the status-state model so `clean_idle_blocked` only applies when blocked tasks are the only pending work, added eval coverage for the distinct `STATE blocked` case, and documented that blocked-vs-clean-idle-blocked behavior in `README.md`."
     }
   ]
 }

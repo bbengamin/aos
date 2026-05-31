@@ -81,11 +81,20 @@ def blocked_tasks(data: dict) -> list[dict]:
     return [task for task in data.get("tasks", []) if task.get("blocked_by_human", False)]
 
 
+def pending_unblocked_tasks(data: dict) -> list[dict]:
+    return [
+        task
+        for task in data.get("tasks", [])
+        if task.get("status") == "pending" and not task.get("blocked_by_human", False)
+    ]
+
+
 def is_clean_idle_blocked(data: dict) -> bool:
     return (
         current_in_progress_task(data) is None
         and not has_executable_safe_task(data)
         and bool(blocked_tasks(data))
+        and not pending_unblocked_tasks(data)
     )
 
 

@@ -284,6 +284,38 @@ def check_status_summary_modes() -> list[str]:
                 },
                 ["STATE clean_idle_blocked", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1"],
             ),
+            (
+                "blocked",
+                {
+                    "version": 1,
+                    "updated_at": "2026-05-31T00:00:00Z",
+                    "tasks": [
+                        {
+                            "id": "REVIEW-1",
+                            "title": "Pending human review gate",
+                            "status": "pending",
+                            "priority": "high",
+                            "kind": "risk",
+                            "safe": False,
+                            "requires_human_review": True,
+                            "done_condition": "Remain review-gated.",
+                        },
+                        {
+                            "id": "BLOCKED-1",
+                            "title": "Waiting on human unblock",
+                            "status": "pending",
+                            "priority": "medium",
+                            "kind": "risk",
+                            "safe": True,
+                            "requires_human_review": False,
+                            "blocked_by_human": True,
+                            "blocker_reason": "Need human input.",
+                            "done_condition": "Remain blocked.",
+                        }
+                    ],
+                },
+                ["STATE blocked", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1"],
+            ),
         ]
 
         tasks_path = tmp_root / "mission" / "tasks.json"
