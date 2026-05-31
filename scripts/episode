@@ -42,20 +42,6 @@ def extract_completion_summary(output: str) -> str | None:
     return None
 
 
-def bootstrap_complete() -> bool:
-    for relative_path in ["mission", "README.md", "agents", "scripts"]:
-        path = ROOT / relative_path
-        if path.is_file():
-            if "MISSION_BOOTSTRAP_COMPLETE" in path.read_text():
-                return True
-            continue
-
-        for child in path.rglob("*"):
-            if child.is_file() and "MISSION_BOOTSTRAP_COMPLETE" in child.read_text():
-                return True
-    return False
-
-
 def main() -> int:
     max_iterations = int(os.environ.get("MAX_ITERATIONS", "30"))
 
@@ -102,10 +88,6 @@ def main() -> int:
         run(["git", "status", "--short"], allow_failure=False)
         run(["git", "add", "README.md", "agents", "mission", "scripts"], allow_failure=False)
         run(["git", "commit", "-m", f"agentic-os iteration {iteration}"], allow_failure=True)
-
-        if bootstrap_complete():
-            print("Bootstrap complete.")
-            return 0
 
     print("Episode limit reached without completion.")
     return 1
