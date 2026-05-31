@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T15:55:04Z",
+  "updated_at": "2026-05-31T15:59:19Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -529,7 +529,7 @@
       "id": "AUTO-20",
       "title": "Refine planner backlog generation heuristics batch 3",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -545,7 +545,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T15:52:11Z"
+      "planned_at": "2026-05-31T15:52:11Z",
+      "started_at": "2026-05-31T15:55:14Z",
+      "completed_at": "2026-05-31T15:59:19Z",
+      "completion_summary": "planner candidate audits now explain theme-limit blocking by showing the open task ids and titles already occupying a theme, with README documentation and passing eval coverage for the new planner explanation signal."
     },
     {
       "id": "AUTO-21",

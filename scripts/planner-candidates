@@ -24,6 +24,14 @@ def print_candidate(candidate: dict) -> None:
     if "theme_open_tasks" in candidate:
         print(f"  theme_open_tasks: {candidate['theme_open_tasks']}")
 
+    theme_open_task_ids = candidate.get("theme_open_task_ids", [])
+    if theme_open_task_ids:
+        print(f"  theme_open_task_ids: {', '.join(theme_open_task_ids)}")
+
+    theme_open_task_titles = candidate.get("theme_open_task_titles", [])
+    if theme_open_task_titles:
+        print(f"  theme_open_task_titles: {', '.join(theme_open_task_titles)}")
+
     if candidate.get("covering_task_id"):
         print(f"  covering_task_id: {candidate['covering_task_id']}")
 

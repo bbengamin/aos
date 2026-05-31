@@ -248,21 +248,26 @@ def resolved_dependency_ids(data: dict, template: dict) -> list[str]:
     return dependency_ids
 
 
-def open_theme_counts(data: dict) -> dict[str, int]:
-    counts: dict[str, int] = {}
+def open_theme_tasks(data: dict) -> dict[str, list[dict]]:
+    tasks_by_theme: dict[str, list[dict]] = {}
     for task in data.get("tasks", []):
         if task.get("status") not in {"pending", "in_progress"}:
             continue
         theme = task.get("theme")
         if not theme:
             continue
-        counts[theme] = counts.get(theme, 0) + 1
-    return counts
+        tasks_by_theme.setdefault(theme, []).append(task)
+    return tasks_by_theme
+
+
+def open_theme_counts(data: dict) -> dict[str, int]:
+    return {theme: len(tasks) for theme, tasks in open_theme_tasks(data).items()}
 
 
 def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -> list[dict]:
     existing_auto = [task for task in data.get("tasks", []) if task.get("id", "").startswith("AUTO-")]
-    theme_counts = open_theme_counts(data)
+    theme_tasks = open_theme_tasks(data)
+    theme_counts = {theme: len(tasks) for theme, tasks in theme_tasks.items()}
     planned_count = 0
     budget_exhausted = max_auto_tasks is not None and len(existing_auto) >= max_auto_tasks
     planner_gate_blocked = bool(pending_safe_tasks(data))
@@ -299,9 +304,12 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
                 candidate["reason"] = "waiting_on_done_titles"
                 candidate["missing_required_titles"] = missing_titles
             elif theme_counts.get(template["theme"], 0) >= PLANNER_THEME_OPEN_LIMIT:
+                open_tasks = theme_tasks.get(template["theme"], [])
                 candidate["status"] = "blocked"
                 candidate["reason"] = "theme_open_limit_reached"
                 candidate["theme_open_tasks"] = theme_counts.get(template["theme"], 0)
+                candidate["theme_open_task_ids"] = [task.get("id") for task in open_tasks if task.get("id")]
+                candidate["theme_open_task_titles"] = [task.get("title") for task in open_tasks if task.get("title")]
             elif planned_count >= PLANNER_BATCH_SIZE:
                 candidate["status"] = "blocked"
                 candidate["reason"] = "planner_batch_full"
@@ -313,6 +321,7 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
                 candidate["reason"] = "would_be_planned_now"
                 planned_count += 1
                 theme_counts[template["theme"]] = theme_counts.get(template["theme"], 0) + 1
+                theme_tasks.setdefault(template["theme"], []).append({"id": None, "title": template["title"]})
 
         candidates.append(candidate)
 
