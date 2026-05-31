@@ -98,6 +98,8 @@ The place to look for blockers is `mission/tasks.json`, and the quickest human-r
 
 `QUEUE_HEALTH` is the compact backlog-shape signal on that status view. It reports labels like `ready_backlog`, `mixed_ready_and_dependencies`, `review_waiting`, `blocked_only`, `stale_active`, or `dependency_waiting_only` so humans can tell whether the queue is mostly actionable, mostly waiting, or already drifting stale without scanning the full detailed sections first.
 
+`EXECUTABLE_SAFE_TASKS` is the matching readiness count. It reports how many safe tasks are runnable right now, so humans can distinguish between a large total backlog and the smaller subset the loop can actually act on immediately.
+
 To inspect the full planner catalog and see why each candidate would be chosen or skipped:
 
 ```bash

@@ -124,6 +124,15 @@ def has_executable_safe_task(data: dict) -> bool:
     return next_safe_task(data) is not None
 
 
+def executable_safe_task_count(data: dict) -> int:
+    current = current_in_progress_task(data)
+    count = 0
+    if current and not current.get("requires_human_review", False) and current.get("safe", False):
+        count += 1
+    count += len(pending_safe_tasks(data))
+    return count
+
+
 def find_task(data: dict, task_id: str) -> dict | None:
     for task in data.get("tasks", []):
         if task.get("id") == task_id:

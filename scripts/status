@@ -8,6 +8,7 @@ from tasklib import (
     age_seconds,
     blocked_tasks,
     current_in_progress_task,
+    executable_safe_task_count,
     dependency_waiting_tasks,
     dependency_titles,
     format_age,
@@ -122,6 +123,7 @@ def main() -> int:
     print(
         f"QUEUE_HEALTH {queue_health(current=current, planned=planned, blockers=blockers, review_waiting=review_waiting, dependency_waiting=dependency_waiting)}"
     )
+    print(f"EXECUTABLE_SAFE_TASKS {executable_safe_task_count(data)}")
     print(f"ATTENTION_REQUIRED {attention}")
     print(
         f"NEXT_ACTION {next_action(attention=attention, current=current, next_task=next_task, dependency_waiting=dependency_waiting)}"

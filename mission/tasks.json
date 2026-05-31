@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T19:32:01Z",
+  "updated_at": "2026-05-31T19:36:54Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -1004,7 +1004,7 @@
       "id": "AUTO-39",
       "title": "Refine operator status summaries batch 9",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -1020,7 +1020,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T19:26:49Z"
+      "planned_at": "2026-05-31T19:26:49Z",
+      "started_at": "2026-05-31T19:32:15Z",
+      "completed_at": "2026-05-31T19:36:54Z",
+      "completion_summary": "added a top-level `EXECUTABLE_SAFE_TASKS` signal to `./scripts/status`, backed it with shared tasklib logic, extended `./scripts/eval` coverage for the new readiness count across status scenarios, and documented the signal in `README.md`"
     }
   ]
 }
