@@ -141,6 +141,14 @@ def blocked_tasks(data: dict) -> list[dict]:
     return [task for task in data.get("tasks", []) if task.get("blocked_by_human", False)]
 
 
+def review_waiting_tasks(data: dict) -> list[dict]:
+    return [
+        task
+        for task in data.get("tasks", [])
+        if task.get("status") == "pending" and task.get("requires_human_review", False)
+    ]
+
+
 def is_stale_in_progress_task(task: dict, *, now: datetime | None = None) -> bool:
     if task.get("status") != "in_progress":
         return False
@@ -172,6 +180,20 @@ def is_clean_idle_blocked(data: dict) -> bool:
         and bool(blocked_tasks(data))
         and not pending_unblocked_tasks(data)
     )
+
+
+def attention_required(data: dict) -> str:
+    current = current_in_progress_task(data)
+    blockers = blocked_tasks(data)
+    if review_waiting_tasks(data):
+        return "review"
+    if current and is_stale_in_progress_task(current):
+        return "stale"
+    if any(is_long_blocked_task(task) for task in blockers):
+        return "stale"
+    if blockers:
+        return "unblock"
+    return "none"
 
 
 def pending_safe_tasks(data: dict) -> list[dict]:

@@ -6,7 +6,7 @@ import sys
 import time
 from pathlib import Path
 
-from tasklib import append_execution_event, has_executable_safe_task, is_clean_idle_blocked, load_tasks, next_safe_task, utc_now
+from tasklib import attention_required, append_execution_event, has_executable_safe_task, is_clean_idle_blocked, load_tasks, next_safe_task, utc_now
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -18,6 +18,7 @@ def record_cycle_outcome(
     cycle: int,
     episode_iterations: str,
     outcome: str,
+    attention: str,
     afk_exit_status: int | None = None,
     completed_tasks: list[dict] | None = None,
     next_task: dict | None = None,
@@ -28,6 +29,7 @@ def record_cycle_outcome(
         "cycle": cycle,
         "episode_iterations": str(episode_iterations),
         "outcome": outcome,
+        "attention_required": attention,
     }
     if afk_exit_status is not None:
         event["afk_exit_status"] = afk_exit_status
@@ -39,7 +41,7 @@ def record_cycle_outcome(
         event["next_task_title"] = next_task.get("title")
     append_execution_event(event)
 
-    parts = [f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome}"]
+    parts = [f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome} attention_required={attention}"]
     if afk_exit_status is not None:
         parts.append(f"afk_exit_status={afk_exit_status}")
     if completed_tasks:
@@ -96,6 +98,7 @@ def main() -> int:
                     cycle=launched_cycles,
                     episode_iterations=episode_iterations,
                     outcome="failure",
+                    attention=attention_required(pre_cycle_data),
                     afk_exit_status=status,
                 )
                 print(f"SUPERVISOR_FAILED afk_exit_status={status}")
@@ -109,6 +112,7 @@ def main() -> int:
                 cycle=launched_cycles,
                 episode_iterations=episode_iterations,
                 outcome=cycle_outcome,
+                attention=attention_required(post_cycle_data),
                 afk_exit_status=status,
                 completed_tasks=completed_tasks,
                 next_task=next_task,

@@ -3,6 +3,7 @@
 import sys
 
 from tasklib import (
+    attention_required,
     age_seconds,
     blocked_tasks,
     current_in_progress_task,
@@ -15,6 +16,7 @@ from tasklib import (
     load_tasks,
     next_safe_task,
     pending_safe_tasks,
+    review_waiting_tasks,
     task_is_dependency_blocked,
     unresolved_dependency_ids,
 )
@@ -60,18 +62,6 @@ def overall_state(*, current: dict | None, planned: list[dict], blockers: list[d
     return "idle"
 
 
-def attention_required(*, current: dict | None, review_waiting: list[dict], blockers: list[dict]) -> str:
-    if review_waiting:
-        return "review"
-    if current and is_stale_in_progress_task(current):
-        return "stale"
-    if any(is_long_blocked_task(task) for task in blockers):
-        return "stale"
-    if blockers:
-        return "unblock"
-    return "none"
-
-
 def main() -> int:
     data = load_tasks()
 
@@ -79,11 +69,7 @@ def main() -> int:
     next_task = next_safe_task(data)
     planned = pending_safe_tasks(data)
     blockers = blocked_tasks(data)
-    review_waiting = [
-        task
-        for task in data.get("tasks", [])
-        if task.get("status") == "pending" and task.get("requires_human_review", False)
-    ]
+    review_waiting = review_waiting_tasks(data)
     dependency_waiting = [
         task
         for task in data.get("tasks", [])
@@ -97,7 +83,7 @@ def main() -> int:
     print(
         f"STATE {overall_state(current=current, planned=planned, blockers=blockers, dependency_waiting=dependency_waiting, clean_idle=clean_idle)}"
     )
-    print(f"ATTENTION_REQUIRED {attention_required(current=current, review_waiting=review_waiting, blockers=blockers)}")
+    print(f"ATTENTION_REQUIRED {attention_required(data)}")
     print(f"CLEAN_IDLE_BLOCKED {'yes' if clean_idle else 'no'}")
 
     if current:
