@@ -42,7 +42,7 @@ It is intentionally file-first:
 
 - `./scripts/next-task`: prints the next pending task that is not blocked by human review
 - `./scripts/execute-task`: starts one safe task or stops for human review
-- `./scripts/episode`: runs a bounded Ralph-style improvement episode
+- `./scripts/episode`: runs a bounded Ralph-style improvement episode and closes the active task after a passing eval and explicit `COMPLETION_SUMMARY`
 - `./scripts/afk`: runs `episode` with timestamped logging for unattended sessions
 - `./scripts/status`: shows the current task, next task, and human blockers
 - `./scripts/eval`: runs the minimum bootstrap checks
@@ -72,6 +72,7 @@ For an unattended bounded run:
 ```
 
 It writes a timestamped log under `logs/` and returns a non-zero exit code if the episode stops for review or fails.
+Inside `episode`, the agent must emit `COMPLETION_SUMMARY: ...` after `./scripts/eval` passes. The runner then records task completion and creates the commit.
 
 To see where human action is needed:
 

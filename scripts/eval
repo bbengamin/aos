@@ -146,6 +146,20 @@ def check_blocker_model() -> list[str]:
     return []
 
 
+def check_episode_completion_loop() -> list[str]:
+    episode_text = (ROOT / "scripts" / "episode").read_text()
+    prompt_text = (ROOT / "mission" / "bootstrap-prompt.txt").read_text()
+
+    failures = []
+    if "COMPLETE_TASK" not in episode_text:
+        failures.append("episode must wire in the completion helper")
+    if "COMPLETION_SUMMARY:" not in episode_text:
+        failures.append("episode must require an explicit completion summary")
+    if "COMPLETION_SUMMARY:" not in prompt_text:
+        failures.append("bootstrap prompt must instruct the agent to emit COMPLETION_SUMMARY")
+    return failures
+
+
 def main() -> int:
     failures = []
     failures.extend(check_files())
@@ -157,6 +171,7 @@ def main() -> int:
     failures.extend(check_plan())
     failures.extend(check_review_gate())
     failures.extend(check_blocker_model())
+    failures.extend(check_episode_completion_loop())
 
     if failures:
         print("EVAL_FAIL")

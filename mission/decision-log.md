@@ -111,3 +111,17 @@ Consequences:
 - tasks can now carry `blocked_by_human` and `blocker_reason`
 - `scripts/next-task` skips blocked tasks
 - `scripts/status` provides the human review inbox
+
+## 2026-05-31 - Let the bounded runner own task closure
+
+Decision:
+Require the agent inside `scripts/episode` to emit an explicit `COMPLETION_SUMMARY`, then let the runner call `scripts/complete-task` and create the commit.
+
+Why:
+The bounded loop should be able to finish one safe slice end to end without depending on the inner agent to mutate task state and git state separately.
+
+Consequences:
+
+- `scripts/episode` now fails closed if the agent does not provide a completion summary
+- task completion remains explicit and durable through `scripts/complete-task`
+- unattended runs keep one source of truth for when a task is actually closed and committed

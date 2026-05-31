@@ -115,3 +115,29 @@ Checks expected:
 - blocked tasks are not selected as the next safe task
 - `scripts/status` shows current work, next work, and blockers in one place
 - eval confirms blocker visibility support is present
+
+## 2026-05-31 - Episode completion loop eval
+
+Command:
+
+```bash
+./scripts/eval
+```
+
+Checks expected:
+
+- `scripts/episode` requires an explicit `COMPLETION_SUMMARY:` line from the inner agent
+- `scripts/episode` calls `scripts/complete-task` after a passing eval
+- `mission/bootstrap-prompt.txt` tells the inner agent not to complete or commit directly during an episode
+- eval still returns `EVAL_PASS`
+
+Result:
+
+- `scripts/episode` now parses `COMPLETION_SUMMARY:` from agent output
+- `scripts/episode` runs `scripts/complete-task --summary ...` before commit
+- `mission/bootstrap-prompt.txt` documents the runner-owned completion flow
+- `scripts/eval` returned `EVAL_PASS`
+
+Outcome:
+
+The bounded episode loop can now close a completed safe task explicitly before committing the iteration.

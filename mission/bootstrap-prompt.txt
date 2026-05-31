@@ -6,8 +6,8 @@ Follow this loop:
 2. Pick exactly one small safe task.
 3. Implement it.
 4. Run `./scripts/eval`.
-5. Update logs and tasks.
-6. Commit the change.
+5. If checks pass, print exactly one final line in this format: `COMPLETION_SUMMARY: <what changed>`.
+6. Do not run `./scripts/complete-task` or `git commit` yourself when inside `./scripts/episode`; the runner will close the task and commit after it sees the summary.
 7. Stop for human review if risk is high.
 
 Never weaken the constitution.

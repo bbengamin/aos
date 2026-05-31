@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T12:10:13Z",
+  "updated_at": "2026-05-31T13:43:25Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -79,13 +79,16 @@
     {
       "id": "NEXT-2",
       "title": "Teach episode runner to close completed tasks",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "kind": "improvement",
       "safe": true,
       "requires_human_review": false,
       "done_condition": "The bounded episode loop can complete the current in-progress task with an explicit summary before committing the iteration.",
-      "notes": "This keeps the loop consistent with the new completion helper instead of leaving task closure as a manual step."
+      "notes": "This keeps the loop consistent with the new completion helper instead of leaving task closure as a manual step.",
+      "started_at": "2026-05-31T12:33:09Z",
+      "completed_at": "2026-05-31T13:43:25Z",
+      "completion_summary": "Updated scripts/episode to require an explicit COMPLETION_SUMMARY, run complete-task after a passing eval, and commit only after the task is durably closed."
     },
     {
       "id": "NEXT-3",

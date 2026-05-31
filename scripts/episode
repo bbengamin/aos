@@ -9,7 +9,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PROMPT_PATH = ROOT / "mission" / "bootstrap-prompt.txt"
 EXECUTE_TASK = ROOT / "scripts" / "execute-task"
+COMPLETE_TASK = ROOT / "scripts" / "complete-task"
 EVAL = ROOT / "scripts" / "eval"
+SUMMARY_PREFIX = "COMPLETION_SUMMARY:"
 
 
 def run(command: list[str], allow_failure: bool = False) -> int:
@@ -17,6 +19,41 @@ def run(command: list[str], allow_failure: bool = False) -> int:
     if result.returncode != 0 and not allow_failure:
         raise SystemExit(result.returncode)
     return result.returncode
+
+
+def run_capture(command: list[str], allow_failure: bool = False) -> subprocess.CompletedProcess[str]:
+    result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+    if result.stdout:
+        print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
+    if result.returncode != 0 and not allow_failure:
+        raise SystemExit(result.returncode)
+    return result
+
+
+def extract_completion_summary(output: str) -> str | None:
+    for raw_line in reversed(output.splitlines()):
+        line = raw_line.strip()
+        if line.startswith(SUMMARY_PREFIX):
+            summary = line.removeprefix(SUMMARY_PREFIX).strip()
+            if summary:
+                return summary
+    return None
+
+
+def bootstrap_complete() -> bool:
+    for relative_path in ["mission", "README.md", "agents", "scripts"]:
+        path = ROOT / relative_path
+        if path.is_file():
+            if "MISSION_BOOTSTRAP_COMPLETE" in path.read_text():
+                return True
+            continue
+
+        for child in path.rglob("*"):
+            if child.is_file() and "MISSION_BOOTSTRAP_COMPLETE" in child.read_text():
+                return True
+    return False
 
 
 def main() -> int:
@@ -41,27 +78,34 @@ def main() -> int:
             return 1
 
         prompt = PROMPT_PATH.read_text()
-        run(["opencode", "run", prompt], allow_failure=False)
+        agent_run = run_capture(["opencode", "run", prompt], allow_failure=False)
+        completion_summary = extract_completion_summary(agent_run.stdout)
+        if not completion_summary:
+            print("Episode stopped: missing completion summary from agent output.")
+            return 1
 
         status = run([str(EVAL)], allow_failure=True)
+        if status != 0:
+            print("Eval failed. Continue only if the next iteration is expected to fix it.")
+            return status
+
+        status = run([str(COMPLETE_TASK), "--summary", completion_summary], allow_failure=True)
+        if status != 0:
+            print("Episode stopped: unable to complete the current task.")
+            return status
+
+        status = run([str(EVAL)], allow_failure=True)
+        if status != 0:
+            print("Eval failed after task completion. Continue only if the next iteration is expected to fix it.")
+            return status
 
         run(["git", "status", "--short"], allow_failure=False)
         run(["git", "add", "README.md", "agents", "mission", "scripts"], allow_failure=False)
         run(["git", "commit", "-m", f"agentic-os iteration {iteration}"], allow_failure=True)
 
-        complete = subprocess.run(
-            ["grep", "-R", "MISSION_BOOTSTRAP_COMPLETE", "mission", "README.md", "agents", "scripts"],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-        )
-        if complete.returncode == 0:
+        if bootstrap_complete():
             print("Bootstrap complete.")
             return 0
-
-        if status != 0:
-            print("Eval failed. Continue only if the next iteration is expected to fix it.")
-            return status
 
     print("Episode limit reached without completion.")
     return 1
