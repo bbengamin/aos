@@ -231,6 +231,14 @@ def task_id_for_done_title(data: dict, title: str) -> str | None:
     return None
 
 
+def non_done_tasks_for_title(data: dict, title: str) -> list[dict]:
+    return [
+        task
+        for task in data.get("tasks", [])
+        if task.get("title") == title and task.get("status") != "done"
+    ]
+
+
 def missing_required_titles(data: dict, template: dict) -> list[str]:
     return [title for title in template.get("requires_done_titles", []) if not title_is_done(data, title)]
 
@@ -246,6 +254,17 @@ def resolved_dependency_ids(data: dict, template: dict) -> list[str]:
         if dependency_id:
             dependency_ids.append(dependency_id)
     return dependency_ids
+
+
+def missing_required_task_states(data: dict, template: dict) -> list[str]:
+    task_states = []
+    for required_title in template.get("requires_done_titles", []):
+        for task in non_done_tasks_for_title(data, required_title):
+            task_id = task.get("id")
+            status = task.get("status")
+            if task_id and status:
+                task_states.append(f"{task_id}:{status}")
+    return task_states
 
 
 def open_theme_tasks(data: dict) -> dict[str, list[dict]]:
@@ -303,6 +322,7 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
                 candidate["status"] = "blocked"
                 candidate["reason"] = "waiting_on_done_titles"
                 candidate["missing_required_titles"] = missing_titles
+                candidate["missing_required_task_states"] = missing_required_task_states(data, template)
             elif theme_counts.get(template["theme"], 0) >= PLANNER_THEME_OPEN_LIMIT:
                 open_tasks = theme_tasks.get(template["theme"], [])
                 candidate["status"] = "blocked"

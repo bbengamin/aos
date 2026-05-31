@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T17:01:14Z",
+  "updated_at": "2026-05-31T17:03:55Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -754,7 +754,7 @@
       "id": "AUTO-29",
       "title": "Refine planner backlog generation heuristics batch 6",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -770,7 +770,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T16:53:37Z"
+      "planned_at": "2026-05-31T16:53:37Z",
+      "started_at": "2026-05-31T17:01:27Z",
+      "completed_at": "2026-05-31T17:03:55Z",
+      "completion_summary": "improved planner candidate audits to show concrete non-done prerequisite task ids/statuses for waiting-on-done-title blockers, documented the new signal in README, and verified it with passing ./scripts/eval"
     },
     {
       "id": "AUTO-30",

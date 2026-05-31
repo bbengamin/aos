@@ -1336,6 +1336,7 @@ def check_planner_candidate_audit_command() -> list[str]:
             "BLOCKED Add task dependency metadata for planned work",
             "  reason: waiting_on_done_titles",
             "  missing_required_titles: Add planner backlog breadth limits",
+            "  missing_required_task_states: AUTO-4:pending",
         ]:
             if expected not in result.stdout:
                 failures.append(f"planner-candidates did not report {expected!r} in the integration check")

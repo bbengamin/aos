@@ -26,6 +26,10 @@ def print_candidate(candidate: dict) -> None:
     if missing_titles:
         print(f"  missing_required_titles: {', '.join(missing_titles)}")
 
+    missing_task_states = candidate.get("missing_required_task_states", [])
+    if missing_task_states:
+        print(f"  missing_required_task_states: {', '.join(missing_task_states)}")
+
     if "theme_open_tasks" in candidate:
         print(f"  theme_open_tasks: {candidate['theme_open_tasks']}")
 
