@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+
+from pathlib import Path
+import json
+import subprocess
+import sys
+
+
+ROOT = Path(__file__).resolve().parent.parent
+
+REQUIRED_FILES = [
+    "README.md",
+    "mission/mission.md",
+    "mission/constitution.md",
+    "mission/resources.md",
+    "mission/plan.md",
+    "mission/tasks.json",
+    "mission/decision-log.md",
+    "mission/risk-log.md",
+    "mission/evals.md",
+    "agents/planner.md",
+    "agents/builder.md",
+    "agents/guardian.md",
+    "scripts/next-task",
+    "scripts/eval",
+]
+
+
+def check_files() -> list[str]:
+    failures = []
+    for relative_path in REQUIRED_FILES:
+        if not (ROOT / relative_path).exists():
+            failures.append(f"missing file: {relative_path}")
+    return failures
+
+
+def check_tasks() -> list[str]:
+    failures = []
+    tasks_path = ROOT / "mission" / "tasks.json"
+    data = json.loads(tasks_path.read_text())
+    tasks = data.get("tasks")
+    if not isinstance(tasks, list) or not tasks:
+        failures.append("tasks.json must contain at least one task")
+        return failures
+
+    required_keys = {"id", "title", "status", "done_condition"}
+    for task in tasks:
+        missing = required_keys - set(task.keys())
+        if missing:
+            failures.append(f"task {task.get('id', '<unknown>')} missing keys: {sorted(missing)}")
+    return failures
+
+
+def check_next_task() -> list[str]:
+    result = subprocess.run(
+        [str(ROOT / "scripts" / "next-task")],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return [f"next-task failed: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+    if "done_condition:" not in result.stdout:
+        return ["next-task output did not include a done condition"]
+    return []
+
+
+def check_plan() -> list[str]:
+    plan_text = (ROOT / "mission" / "plan.md").read_text()
+    if "Proposed Next Mission" not in plan_text:
+        return ["plan.md must include 'Proposed Next Mission'"]
+    return []
+
+
+def main() -> int:
+    failures = []
+    failures.extend(check_files())
+    failures.extend(check_tasks())
+    failures.extend(check_next_task())
+    failures.extend(check_plan())
+
+    if failures:
+        print("EVAL_FAIL")
+        for failure in failures:
+            print(f"- {failure}")
+        return 1
+
+    print("EVAL_PASS")
+    print("bootstrap repository capabilities are present")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

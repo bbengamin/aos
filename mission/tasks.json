@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "updated_at": "2026-05-31T00:00:00Z",
+  "tasks": [
+    {
+      "id": "BOOT-1",
+      "title": "Create mission bootstrap structure",
+      "status": "done",
+      "priority": "high",
+      "kind": "bootstrap",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "All bootstrap files and scripts exist in the repository.",
+      "notes": "Completed in the initial bootstrap iteration."
+    },
+    {
+      "id": "BOOT-2",
+      "title": "Add single-task execution script",
+      "status": "pending",
+      "priority": "high",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "A script can read tasks, select one safe task, and record a start or skip event.",
+      "notes": "Smallest next improvement after bootstrap eval passes."
+    },
+    {
+      "id": "BOOT-3",
+      "title": "Add human-review gate helper",
+      "status": "pending",
+      "priority": "medium",
+      "kind": "safety",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "The system can classify a task as human-review-required and stop before execution.",
+      "notes": "Keeps control explicit before adding more autonomy."
+    }
+  ]
+}
