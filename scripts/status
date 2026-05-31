@@ -19,6 +19,7 @@ from tasklib import (
     load_tasks,
     next_action,
     next_action_task,
+    next_step_summary,
     next_safe_task,
     overall_state,
     pending_safe_tasks,
@@ -77,12 +78,6 @@ def work_inventory(
         f" dependency_waiting={len(dependency_waiting)}"
         f" stale={stale_count}"
     )
-
-
-def next_step_summary(action: str, task: dict | None) -> str:
-    if not task:
-        return action
-    return f"{action} {task['id']}: {task['title']}"
 
 
 def main() -> int:

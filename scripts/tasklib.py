@@ -320,6 +320,12 @@ def next_action_task(
     return None
 
 
+def next_step_summary(action: str, task: dict | None) -> str:
+    if not task:
+        return action
+    return f"{action} {task['id']}: {task['title']}"
+
+
 def waiting_on(*, review_waiting: list[dict], blockers: list[dict], dependency_waiting: list[dict]) -> str:
     if review_waiting:
         return "human_review"

@@ -18,6 +18,7 @@ from tasklib import (
     load_tasks,
     next_action,
     next_action_task,
+    next_step_summary,
     next_safe_task,
     overall_state,
     pending_safe_tasks,
@@ -43,6 +44,7 @@ def record_cycle_outcome(
     queue_health_state: str,
     attention: str,
     suggested_action: str,
+    next_step: str,
     waiting_on_state: str,
     afk_exit_status: int | None = None,
     completed_tasks: list[dict] | None = None,
@@ -62,6 +64,7 @@ def record_cycle_outcome(
         "queue_health": queue_health_state,
         "attention_required": attention,
         "suggested_action": suggested_action,
+        "next_step": next_step,
         "waiting_on": waiting_on_state,
     }
     if afk_exit_status is not None:
@@ -82,7 +85,7 @@ def record_cycle_outcome(
     append_execution_event(event)
 
     parts = [
-        f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome} repo_state={repo_state} repo_state_reason={repo_state_reason} queue_health={queue_health_state} attention_required={attention} suggested_action={suggested_action} waiting_on={waiting_on_state}"
+        f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome} repo_state={repo_state} repo_state_reason={repo_state_reason} queue_health={queue_health_state} attention_required={attention} suggested_action={suggested_action} next_step={next_step!r} waiting_on={waiting_on_state}"
     ]
     if afk_exit_status is not None:
         parts.append(f"afk_exit_status={afk_exit_status}")
@@ -160,6 +163,7 @@ def main() -> int:
                 review_waiting=pre_cycle_review_waiting,
                 blockers=pre_cycle_blockers,
             )
+            pre_cycle_next_step = next_step_summary(pre_cycle_suggested_action, pre_cycle_suggested_action_task)
             if max_cycles and launched_cycles >= max_cycles:
                 print("SUPERVISOR_STOPPED")
                 print("reason: reached configured cycle limit")
@@ -198,6 +202,7 @@ def main() -> int:
                     ),
                     attention=pre_cycle_attention,
                     suggested_action=pre_cycle_suggested_action,
+                    next_step=pre_cycle_next_step,
                     waiting_on_state=waiting_on(
                         review_waiting=pre_cycle_review_waiting,
                         blockers=pre_cycle_blockers,
@@ -228,6 +233,14 @@ def main() -> int:
                 next_task=next_task,
                 dependency_waiting=post_cycle_dependency_waiting,
             )
+            post_cycle_suggested_action_task = next_action_task(
+                attention=post_cycle_attention,
+                current=post_cycle_current,
+                next_task=next_task,
+                dependency_waiting=post_cycle_dependency_waiting,
+                review_waiting=post_cycle_review_waiting,
+                blockers=post_cycle_blockers,
+            )
             record_cycle_outcome(
                 cycle=launched_cycles,
                 episode_iterations=episode_iterations,
@@ -257,6 +270,7 @@ def main() -> int:
                 ),
                 attention=post_cycle_attention,
                 suggested_action=post_cycle_suggested_action,
+                next_step=next_step_summary(post_cycle_suggested_action, post_cycle_suggested_action_task),
                 waiting_on_state=waiting_on(
                     review_waiting=post_cycle_review_waiting,
                     blockers=post_cycle_blockers,
@@ -265,14 +279,7 @@ def main() -> int:
                 afk_exit_status=status,
                 completed_tasks=completed_tasks,
                 next_task=next_task,
-                suggested_action_task=next_action_task(
-                    attention=post_cycle_attention,
-                    current=post_cycle_current,
-                    next_task=next_task,
-                    dependency_waiting=post_cycle_dependency_waiting,
-                    review_waiting=post_cycle_review_waiting,
-                    blockers=post_cycle_blockers,
-                ),
+                suggested_action_task=post_cycle_suggested_action_task,
                 remaining_safe_tasks=remaining_safe_tasks,
                 executable_safe_tasks=executable_safe_task_count(post_cycle_data),
             )
