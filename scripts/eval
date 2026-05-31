@@ -1895,7 +1895,10 @@ def check_supervisor_cycle_summary() -> list[str]:
             )
             return failures
 
-        summary_line = "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=clean_idle attention_required=unblock afk_exit_status=0 completed_count=1 completed_task_ids=AUTO-7"
+        summary_line = (
+            "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=clean_idle attention_required=unblock afk_exit_status=0 "
+            "completed_count=1 completed_task_ids=AUTO-7 completed_task_titles='Add supervisor cycle outcome summaries'"
+        )
         if summary_line not in result.stdout:
             failures.append("supervisor did not print the expected clean-idle cycle summary after a successful AFK cycle")
 
@@ -1999,7 +2002,7 @@ def check_supervisor_cycle_next_task_summary() -> list[str]:
 
         expected_line = (
             "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=progress attention_required=none afk_exit_status=0 "
-            "completed_count=1 completed_task_ids=AUTO-13 next_task_id=AUTO-14"
+            "completed_count=1 completed_task_ids=AUTO-13 completed_task_titles='Finish first task' next_task_id=AUTO-14"
         )
         if expected_line not in result.stdout:
             failures.append("supervisor did not print the expected next-task cycle summary after making progress")

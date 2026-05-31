@@ -47,6 +47,9 @@ def record_cycle_outcome(
     if completed_tasks:
         parts.append(f"completed_count={len(completed_tasks)}")
         parts.append(f"completed_task_ids={','.join(task.get('id') for task in completed_tasks if task.get('id'))}")
+        completed_titles = [task.get("title") for task in completed_tasks if task.get("title")]
+        if completed_titles:
+            parts.append(f"completed_task_titles={','.join(completed_titles)!r}")
     if next_task is not None:
         parts.append(f"next_task_id={next_task.get('id')}")
         if next_task.get("title"):
