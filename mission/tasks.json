@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T14:13:47Z",
+  "updated_at": "2026-05-31T14:15:59Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -194,6 +194,48 @@
       "started_at": "2026-05-31T14:11:57Z",
       "completed_at": "2026-05-31T14:13:47Z",
       "completion_summary": "Updated `scripts/status` to report a single overall state plus explicit clean-idle-blocked and planned-work summaries, added eval coverage for active/planned/clean-idle-blocked status modes, and documented the richer status view in `README.md`."
+    },
+    {
+      "id": "AUTO-4",
+      "title": "Add supervisor daemon for repeated AFK episodes",
+      "status": "done",
+      "priority": "high",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "A local daemon script can launch bounded AFK episodes repeatedly, sleep in clean idle-blocked state, and resume when executable work appears.",
+      "notes": "This turns episodic AFK runs into a persistent local operating loop without adding secrets or private integrations.",
+      "planning_reason": "The loop can already plan and execute bounded episodes, but it still needs a persistent local operator that keeps relaunching those episodes while preserving review gates.",
+      "planned_at": "2026-05-31T14:13:51Z",
+      "started_at": "2026-05-31T14:13:51Z",
+      "completed_at": "2026-05-31T14:15:59Z",
+      "completion_summary": "Prevented `scripts/plan-next` from recreating already-covered planner tasks by deduplicating against matching pending, in-progress, or done work, and added eval coverage that fails if completed planner templates are re-planned."
+    },
+    {
+      "id": "AUTO-5",
+      "title": "Add planner-generated task reporting",
+      "status": "pending",
+      "priority": "medium",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "The system records when and why new tasks were generated so humans can review planning decisions after AFK runs.",
+      "notes": "Makes the new planning step inspectable and easier to trust.",
+      "planning_reason": "The planner currently creates new work with only titles and done conditions, so humans need explicit rationale to audit why each new task entered the queue.",
+      "planned_at": "2026-05-31T14:13:51Z"
+    },
+    {
+      "id": "AUTO-6",
+      "title": "Add idle-state status summary command",
+      "status": "pending",
+      "priority": "medium",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "A status summary can distinguish active work, planned work, blocked work, and clean idle-blocked state in one command.",
+      "notes": "Helps humans quickly understand whether the system is waiting or working.",
+      "planning_reason": "Once planning and supervision exist, humans need a single status view that explains whether the system is actively working, waiting on a blocker, or cleanly idle.",
+      "planned_at": "2026-05-31T14:13:51Z"
     }
   ]
 }

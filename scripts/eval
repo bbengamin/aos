@@ -428,6 +428,107 @@ def check_plan_next_generates_tasks() -> list[str]:
     return []
 
 
+def check_plan_next_skips_duplicate_templates() -> list[str]:
+    if os.environ.get("AOS_SKIP_PLAN_NEXT_CHECK") == "1":
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+        tasks_data = {
+            "version": 1,
+            "updated_at": "2026-05-31T00:00:00Z",
+            "tasks": [
+                {
+                    "id": "AUTO-1",
+                    "title": "Add supervisor daemon for repeated AFK episodes",
+                    "status": "done",
+                    "priority": "high",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "A local daemon script can launch bounded AFK episodes repeatedly, sleep in clean idle-blocked state, and resume when executable work appears.",
+                    "completed_at": "2026-05-31T00:00:00Z",
+                    "completion_summary": "Already completed.",
+                },
+                {
+                    "id": "AUTO-2",
+                    "title": "Add planner-generated task reporting",
+                    "status": "done",
+                    "priority": "medium",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "The system records when and why new tasks were generated so humans can review planning decisions after AFK runs.",
+                    "completed_at": "2026-05-31T00:00:00Z",
+                    "completion_summary": "Already completed.",
+                },
+                {
+                    "id": "AUTO-3",
+                    "title": "Add idle-state status summary command",
+                    "status": "done",
+                    "priority": "medium",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "A status summary can distinguish active work, planned work, blocked work, and clean idle-blocked state in one command.",
+                    "completed_at": "2026-05-31T00:00:00Z",
+                    "completion_summary": "Already completed.",
+                },
+                {
+                    "id": "RISK-ONLY",
+                    "title": "Only blocked risk remains",
+                    "status": "pending",
+                    "priority": "medium",
+                    "kind": "risk",
+                    "safe": False,
+                    "requires_human_review": True,
+                    "blocked_by_human": True,
+                    "done_condition": "Remain blocked.",
+                    "blocker_reason": "Still waiting for human approval.",
+                },
+            ],
+        }
+        tasks_path.write_text(json.dumps(tasks_data, indent=2) + "\n")
+
+        execution_log_path = tmp_root / "mission" / "execution-log.ndjson"
+        execution_log_path.write_text("")
+
+        plan_next_path = tmp_root / "scripts" / "plan-next"
+        plan_next_path.chmod(plan_next_path.stat().st_mode | stat.S_IXUSR)
+
+        env = os.environ.copy()
+        env["AOS_SKIP_PLAN_NEXT_CHECK"] = "1"
+        env.pop("AOS_MAX_AUTO_TASKS", None)
+
+        result = subprocess.run(
+            [str(plan_next_path)],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+        if result.returncode != 0:
+            return [f"plan-next did not skip duplicates cleanly in integration check: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+
+        if "PLANNING_SKIPPED" not in result.stdout or "already covered" not in result.stdout:
+            return ["plan-next did not explain that planner templates were already covered"]
+
+        updated_tasks = json.loads(tasks_path.read_text())
+        auto_tasks = [task for task in updated_tasks.get("tasks", []) if task.get("id", "").startswith("AUTO-")]
+        if len(auto_tasks) != 3:
+            return ["plan-next created duplicate AUTO-* tasks even though matching completed work already existed"]
+
+        events = [json.loads(line) for line in execution_log_path.read_text().splitlines() if line.strip()]
+        if any(event.get("event") == "planned_next_tasks" for event in events):
+            return ["plan-next logged planned_next_tasks even though every planner template was already covered"]
+
+    return []
+
+
 def check_episode_completion_loop() -> list[str]:
     episode_text = (ROOT / "scripts" / "episode").read_text()
     prompt_text = (ROOT / "mission" / "bootstrap-prompt.txt").read_text()
@@ -789,6 +890,7 @@ def main() -> int:
     failures.extend(check_blocker_commands())
     failures.extend(check_planning_loop())
     failures.extend(check_plan_next_generates_tasks())
+    failures.extend(check_plan_next_skips_duplicate_templates())
     failures.extend(check_episode_completion_loop())
     failures.extend(check_episode_blocker_continuation())
     failures.extend(check_supervisor_loop())

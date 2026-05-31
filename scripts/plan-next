@@ -33,6 +33,17 @@ SAFE_TASK_TEMPLATES = [
 ]
 
 
+def template_already_covered(data: dict, template: dict) -> bool:
+    for task in data.get("tasks", []):
+        if task.get("title") != template["title"]:
+            continue
+        if task.get("done_condition") != template["done_condition"]:
+            continue
+        if task.get("status") in {"pending", "in_progress", "done"}:
+            return True
+    return False
+
+
 def main() -> int:
     data = load_tasks()
     max_auto_tasks = None
@@ -56,6 +67,8 @@ def main() -> int:
     timestamp = utc_now()
 
     for template in SAFE_TASK_TEMPLATES:
+        if template_already_covered(data, template):
+            continue
         task_id = next_auto_task_id(data)
         task = {
             "id": task_id,
@@ -72,6 +85,11 @@ def main() -> int:
         }
         add_task(data, task)
         planned.append(task)
+
+    if not planned:
+        print("PLANNING_SKIPPED")
+        print("reason: all safe planner templates are already covered")
+        return 0
 
     save_tasks(data)
 
