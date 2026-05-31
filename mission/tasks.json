@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T19:48:06Z",
+  "updated_at": "2026-05-31T19:50:30Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -1129,7 +1129,7 @@
       "id": "AUTO-44",
       "title": "Refine planner backlog generation heuristics batch 11",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -1145,7 +1145,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T19:45:54Z"
+      "planned_at": "2026-05-31T19:45:54Z",
+      "started_at": "2026-05-31T19:48:20Z",
+      "completed_at": "2026-05-31T19:50:30Z",
+      "completion_summary": "exposed planner follow-up lineage in `./scripts/planner-candidates` by printing `generator_key` and `follow_up_batch`, documented the new audit signal in `README.md`, and extended `./scripts/eval` to verify it."
     },
     {
       "id": "AUTO-45",

@@ -19,6 +19,12 @@ def print_candidate(candidate: dict) -> None:
     print(f"  done_condition: {candidate['done_condition']}")
     print(f"  planning_reason: {candidate['planning_reason']}")
 
+    if candidate.get("generator_key"):
+        print(f"  generator_key: {candidate['generator_key']}")
+
+    if candidate.get("follow_up_batch"):
+        print(f"  follow_up_batch: {candidate['follow_up_batch']}")
+
     dependency_titles = candidate.get("dependency_titles", [])
     if dependency_titles:
         print(f"  dependencies: {', '.join(dependency_titles)}")
