@@ -73,8 +73,8 @@ For an unattended bounded run:
 ./scripts/afk 20
 ```
 
-It writes a timestamped log under `logs/` and returns a non-zero exit code if the episode stops for review or fails.
-Inside `episode`, the agent must emit `COMPLETION_SUMMARY: ...` after `./scripts/eval` passes. The runner then records task completion and creates the commit.
+It writes a timestamped log under `logs/` and returns a non-zero exit code only for real failures.
+Inside `episode`, the agent must emit either `COMPLETION_SUMMARY: ...` for completed work or `BLOCKED_BY_HUMAN: ...` when human input is needed. The runner records the result and keeps using the remaining iteration budget on other safe tasks.
 
 To see where human action is needed:
 

@@ -139,3 +139,17 @@ Consequences:
 - `scripts/block-task` records why a task paused
 - `scripts/unblock-task` records how the blocker was resolved
 - paused work can resume later with the context preserved in both task state and execution log
+
+## 2026-05-31 - Continue AFK runs past blocked tasks
+
+Decision:
+Blocked tasks should consume only their own iteration, not terminate the whole AFK run.
+
+Why:
+If one task needs a human, the remaining iteration budget should still be used on other safe tasks. Otherwise AFK runs waste capacity and stop too early.
+
+Consequences:
+
+- the runner treats `BLOCKED_BY_HUMAN:` as a structured non-fatal outcome
+- blocked work is recorded and skipped in later selections
+- AFK runs end only when the executable queue is exhausted repeatedly or a real failure occurs

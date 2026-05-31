@@ -106,7 +106,7 @@
     {
       "id": "NEXT-4",
       "title": "Add explicit human blocker commands",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "kind": "improvement",
       "safe": true,
@@ -117,7 +117,20 @@
       "blocker_reason": "Waiting for human decision on scope",
       "blocked_at": "2026-05-31T13:30:00Z",
       "unblocked_at": "2026-05-31T13:30:01Z",
-      "unblock_resolution": "Human approved the narrow slice"
+      "unblock_resolution": "Human approved the narrow slice",
+      "completed_at": "2026-05-31T00:00:00Z",
+      "completion_summary": "Added scripts/block-task and scripts/unblock-task so humans can explicitly pause and resume tasks with durable notes."
+    },
+    {
+      "id": "NEXT-5",
+      "title": "Continue AFK runs past blocked tasks",
+      "status": "pending",
+      "priority": "high",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "The episode runner records blocked tasks and keeps using remaining iterations on other safe work instead of stopping immediately.",
+      "notes": "This aligns AFK behavior with the expectation that blocked task 3 does not prevent tasks 4 and 5 from running."
     }
   ]
 }

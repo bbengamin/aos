@@ -6,9 +6,10 @@ Follow this loop:
 2. Pick exactly one small safe task.
 3. Implement it.
 4. Run `./scripts/eval`.
-5. If checks pass, print exactly one final line in this format: `COMPLETION_SUMMARY: <what changed>`.
-6. Do not run `./scripts/complete-task` or `git commit` yourself when inside `./scripts/episode`; the runner will close the task and commit after it sees the summary.
-7. Stop for human review if risk is high.
+5. If checks pass and the task is complete, print exactly one final line in this format: `COMPLETION_SUMMARY: <what changed>`.
+6. If the task cannot proceed without human input, print exactly one final line in this format: `BLOCKED_BY_HUMAN: <what decision or input is needed>`.
+7. Do not run `./scripts/complete-task`, `./scripts/block-task`, or `git commit` yourself when inside `./scripts/episode`; the runner will update task state after it sees the summary.
+8. Stop for human review if risk is high.
 
 Never weaken the constitution.
 Never claim completion unless checks pass.

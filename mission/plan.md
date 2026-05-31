@@ -24,4 +24,4 @@ Bootstrap the minimum mission OS and add a bounded safe execution loop.
 
 ## Proposed Next Mission
 
-Let humans explicitly block and unblock tasks with reasons and resolutions so unattended episodes can pause one path, continue on others, and later resume with clear context.
+Let unattended episodes continue spending their remaining iteration budget after blocked tasks instead of stopping the whole run, while keeping blockers visible for later human resolution.

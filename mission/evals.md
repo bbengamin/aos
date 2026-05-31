@@ -127,6 +127,7 @@ Command:
 Checks expected:
 
 - `scripts/episode` requires an explicit `COMPLETION_SUMMARY:` line from the inner agent
+- `scripts/episode` supports an explicit `BLOCKED_BY_HUMAN:` line from the inner agent
 - `scripts/episode` calls `scripts/complete-task` after a passing eval
 - `mission/bootstrap-prompt.txt` tells the inner agent not to complete or commit directly during an episode
 - eval still returns `EVAL_PASS`
@@ -134,6 +135,7 @@ Checks expected:
 Result:
 
 - `scripts/episode` now parses `COMPLETION_SUMMARY:` from agent output
+- `scripts/episode` now also parses `BLOCKED_BY_HUMAN:` from agent output
 - `scripts/episode` runs `scripts/complete-task --summary ...` before commit
 - `mission/bootstrap-prompt.txt` documents the runner-owned completion flow
 - `scripts/eval` returned `EVAL_PASS`
@@ -141,6 +143,21 @@ Result:
 Outcome:
 
 The bounded episode loop can now close a completed safe task explicitly before committing the iteration.
+
+## 2026-05-31 - Continue past blocked tasks eval
+
+Command:
+
+```bash
+./scripts/status
+./scripts/eval
+```
+
+Checks expected:
+
+- blocked tasks remain visible in status output
+- the runner can treat blocked tasks as non-fatal and continue with later safe work
+- prompt and runner both support `BLOCKED_BY_HUMAN:` as a structured blocker signal
 
 ## 2026-05-31 - Human blocker workflow eval
 

@@ -10,8 +10,10 @@ ROOT = Path(__file__).resolve().parent.parent
 PROMPT_PATH = ROOT / "mission" / "bootstrap-prompt.txt"
 EXECUTE_TASK = ROOT / "scripts" / "execute-task"
 COMPLETE_TASK = ROOT / "scripts" / "complete-task"
+BLOCK_TASK = ROOT / "scripts" / "block-task"
 EVAL = ROOT / "scripts" / "eval"
 SUMMARY_PREFIX = "COMPLETION_SUMMARY:"
+BLOCK_PREFIX = "BLOCKED_BY_HUMAN:"
 
 
 def run(command: list[str], allow_failure: bool = False) -> int:
@@ -42,8 +44,29 @@ def extract_completion_summary(output: str) -> str | None:
     return None
 
 
+def extract_block_reason(output: str) -> str | None:
+    for raw_line in reversed(output.splitlines()):
+        line = raw_line.strip()
+        if line.startswith(BLOCK_PREFIX):
+            reason = line.removeprefix(BLOCK_PREFIX).strip()
+            if reason:
+                return reason
+    return None
+
+
+def extract_task_id(output: str) -> str | None:
+    for raw_line in output.splitlines():
+        line = raw_line.strip()
+        if line.startswith("task_id:"):
+            task_id = line.removeprefix("task_id:").strip()
+            if task_id:
+                return task_id
+    return None
+
+
 def main() -> int:
     max_iterations = int(os.environ.get("MAX_ITERATIONS", "30"))
+    idle_iterations = 0
 
     for iteration in range(1, max_iterations + 1):
         print(f"== Iteration {iteration}/{max_iterations} ==")
@@ -55,13 +78,20 @@ def main() -> int:
             text=True,
         )
         print(execution_probe.stdout, end="")
+        selected_task_id = extract_task_id(execution_probe.stdout)
 
         if execution_probe.returncode == 2:
-            print("Episode stopped for human review.")
-            return 2
+            print("Task requires human review. Continuing to look for other work next iteration.")
+            continue
         if execution_probe.returncode != 0:
-            print("No executable safe task available.")
-            return 1
+            idle_iterations += 1
+            print("No executable safe task available right now.")
+            if idle_iterations >= 3:
+                print("Episode ended after repeated idle iterations.")
+                return 0
+            continue
+
+        idle_iterations = 0
 
         status = run([str(EXECUTE_TASK)], allow_failure=True)
         if status not in (0,):
@@ -70,7 +100,20 @@ def main() -> int:
 
         prompt = PROMPT_PATH.read_text()
         agent_run = run_capture(["opencode", "run", prompt], allow_failure=False)
+        block_reason = extract_block_reason(agent_run.stdout)
         completion_summary = extract_completion_summary(agent_run.stdout)
+
+        if block_reason:
+            if not selected_task_id:
+                print("Episode stopped: unable to identify the selected task for blocking.")
+                return 1
+            status = run([str(BLOCK_TASK), selected_task_id, "--reason", block_reason], allow_failure=True)
+            if status != 0:
+                print("Episode stopped: unable to record blocked task state.")
+                return status
+            print("Task blocked by human input request. Continuing to the next iteration.")
+            continue
+
         if not completion_summary:
             print("Episode stopped: missing completion summary from agent output.")
             return 1

@@ -186,8 +186,14 @@ def check_episode_completion_loop() -> list[str]:
         failures.append("episode must wire in the completion helper")
     if "COMPLETION_SUMMARY:" not in episode_text:
         failures.append("episode must require an explicit completion summary")
+    if "BLOCK_TASK" not in episode_text:
+        failures.append("episode must wire in the blocker helper")
+    if "BLOCKED_BY_HUMAN:" not in episode_text:
+        failures.append("episode must support explicit blocker output")
     if "COMPLETION_SUMMARY:" not in prompt_text:
         failures.append("bootstrap prompt must instruct the agent to emit COMPLETION_SUMMARY")
+    if "BLOCKED_BY_HUMAN:" not in prompt_text:
+        failures.append("bootstrap prompt must instruct the agent to emit BLOCKED_BY_HUMAN")
     return failures
 
 
