@@ -77,6 +77,22 @@ def attention_task(*, attention: str, current: dict | None, review_waiting: list
     return None
 
 
+def next_action(*, attention: str, current: dict | None, next_task: dict | None, dependency_waiting: list[dict]) -> str:
+    if attention == "review":
+        return "request_human_review"
+    if attention == "stale":
+        return "investigate_stale_work"
+    if attention == "unblock":
+        return "unblock_human_task"
+    if current:
+        return "continue_current"
+    if next_task:
+        return "execute_next_safe_task"
+    if dependency_waiting:
+        return "wait_on_dependencies"
+    return "idle"
+
+
 def main() -> int:
     data = load_tasks()
 
@@ -106,6 +122,9 @@ def main() -> int:
         f"STATE {overall_state(current=current, planned=planned, blockers=blockers, dependency_waiting=dependency_waiting, clean_idle=clean_idle)}"
     )
     print(f"ATTENTION_REQUIRED {attention}")
+    print(
+        f"NEXT_ACTION {next_action(attention=attention, current=current, next_task=next_task, dependency_waiting=dependency_waiting)}"
+    )
     if attention_task_item:
         print(f"ATTENTION_TASK {attention_task_item['id']}: {attention_task_item['title']}")
     else:

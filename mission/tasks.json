@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T16:42:09Z",
+  "updated_at": "2026-05-31T16:45:37Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -629,7 +629,7 @@
       "id": "AUTO-24",
       "title": "Refine operator status summaries batch 4",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -645,7 +645,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T16:02:00Z"
+      "planned_at": "2026-05-31T16:02:00Z",
+      "started_at": "2026-05-31T16:42:20Z",
+      "completed_at": "2026-05-31T16:45:37Z",
+      "completion_summary": "Added a top-level `NEXT_ACTION` operator hint to `./scripts/status`, updated eval coverage to verify it across active/planned/blocked/stale flows, and documented the new status signal in `README.md`."
     }
   ]
 }
