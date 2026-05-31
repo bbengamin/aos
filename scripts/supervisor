@@ -11,6 +11,7 @@ from tasklib import (
     append_execution_event,
     blocked_tasks,
     current_in_progress_task,
+    executable_safe_task_count,
     dependency_waiting_tasks,
     has_executable_safe_task,
     is_clean_idle_blocked,
@@ -46,6 +47,7 @@ def record_cycle_outcome(
     next_task: dict | None = None,
     suggested_action_task: dict | None = None,
     remaining_safe_tasks: int | None = None,
+    executable_safe_tasks: int | None = None,
 ) -> None:
     event = {
         "timestamp": utc_now(),
@@ -72,6 +74,8 @@ def record_cycle_outcome(
         event["suggested_action_task_title"] = suggested_action_task.get("title")
     if remaining_safe_tasks is not None:
         event["remaining_safe_tasks"] = remaining_safe_tasks
+    if executable_safe_tasks is not None:
+        event["executable_safe_tasks"] = executable_safe_tasks
     append_execution_event(event)
 
     parts = [
@@ -95,6 +99,8 @@ def record_cycle_outcome(
             parts.append(f"suggested_action_task_title={suggested_action_task.get('title')!r}")
     if remaining_safe_tasks is not None:
         parts.append(f"remaining_safe_tasks={remaining_safe_tasks}")
+    if executable_safe_tasks is not None:
+        parts.append(f"executable_safe_tasks={executable_safe_tasks}")
     print(" ".join(parts))
 
 
@@ -191,6 +197,7 @@ def main() -> int:
                     suggested_action=pre_cycle_suggested_action,
                     afk_exit_status=status,
                     suggested_action_task=pre_cycle_suggested_action_task,
+                    executable_safe_tasks=executable_safe_task_count(pre_cycle_data),
                 )
                 print(f"SUPERVISOR_FAILED afk_exit_status={status}")
                 return status
@@ -254,6 +261,7 @@ def main() -> int:
                     blockers=post_cycle_blockers,
                 ),
                 remaining_safe_tasks=remaining_safe_tasks,
+                executable_safe_tasks=executable_safe_task_count(post_cycle_data),
             )
 
             if max_cycles and launched_cycles >= max_cycles:
