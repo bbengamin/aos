@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T19:05:25Z",
+  "updated_at": "2026-05-31T19:08:06Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -854,7 +854,7 @@
       "id": "AUTO-33",
       "title": "Refine operator status summaries batch 7",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -870,7 +870,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T17:07:05Z"
+      "planned_at": "2026-05-31T17:07:05Z",
+      "started_at": "2026-05-31T19:05:38Z",
+      "completed_at": "2026-05-31T19:08:06Z",
+      "completion_summary": "added a `STATE_REASON` signal to `./scripts/status` so operator summaries explain why the repo is `active`, `planned`, `blocked`, or `clean_idle_blocked`, extended `./scripts/eval` with matching assertions plus a dependency-only status scenario, and documented the new status explanation in `README.md`"
     }
   ]
 }

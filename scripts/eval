@@ -218,6 +218,8 @@ def check_blocker_model() -> list[str]:
         return [f"status script failed: {result.stdout.strip()} {result.stderr.strip()}".strip()]
     if "STATE " not in result.stdout:
         return ["status script output did not include an overall state summary"]
+    if "STATE_REASON " not in result.stdout:
+        return ["status script output did not include a state-reason summary"]
     if "CLEAN_IDLE_BLOCKED " not in result.stdout:
         return ["status script output did not include a clean idle-blocked summary"]
     if "PLANNED_WORK " not in result.stdout:
@@ -269,7 +271,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE active", "WORK_INVENTORY active=1 planned=0 review=0 blocked=0 dependency_waiting=0 stale=0", "ATTENTION_REQUIRED none", "NEXT_ACTION continue_current", "ATTENTION_TASK none", "NEXT_ACTION_TASK ACTIVE-1: Current active task", "CLEAN_IDLE_BLOCKED no", "CURRENT ACTIVE-1", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0"],
+                ["STATE active", "STATE_REASON current_in_progress", "WORK_INVENTORY active=1 planned=0 review=0 blocked=0 dependency_waiting=0 stale=0", "ATTENTION_REQUIRED none", "NEXT_ACTION continue_current", "ATTENTION_TASK none", "NEXT_ACTION_TASK ACTIVE-1: Current active task", "CLEAN_IDLE_BLOCKED no", "CURRENT ACTIVE-1", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0"],
             ),
             (
                 "planned",
@@ -290,7 +292,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE planned", "WORK_INVENTORY active=0 planned=1 review=0 blocked=0 dependency_waiting=0 stale=0", "ATTENTION_REQUIRED none", "NEXT_ACTION execute_next_safe_task", "ATTENTION_TASK none", "NEXT_ACTION_TASK AUTO-1: Planned follow-up", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT AUTO-1", "PLANNED_WORK 1", "PLANNED AUTO-1", "BLOCKERS 0", "REVIEW_WAITING 0"],
+                ["STATE planned", "STATE_REASON ready_safe_backlog", "WORK_INVENTORY active=0 planned=1 review=0 blocked=0 dependency_waiting=0 stale=0", "ATTENTION_REQUIRED none", "NEXT_ACTION execute_next_safe_task", "ATTENTION_TASK none", "NEXT_ACTION_TASK AUTO-1: Planned follow-up", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT AUTO-1", "PLANNED_WORK 1", "PLANNED AUTO-1", "BLOCKERS 0", "REVIEW_WAITING 0"],
             ),
             (
                 "clean_idle_blocked",
@@ -312,7 +314,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE clean_idle_blocked", "WORK_INVENTORY active=0 planned=0 review=0 blocked=1 dependency_waiting=0 stale=0", "ATTENTION_REQUIRED unblock", "NEXT_ACTION unblock_human_task", "ATTENTION_TASK BLOCKED-1: Waiting on human unblock", "NEXT_ACTION_TASK BLOCKED-1: Waiting on human unblock", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 0"],
+                ["STATE clean_idle_blocked", "STATE_REASON human_blocked_only", "WORK_INVENTORY active=0 planned=0 review=0 blocked=1 dependency_waiting=0 stale=0", "ATTENTION_REQUIRED unblock", "NEXT_ACTION unblock_human_task", "ATTENTION_TASK BLOCKED-1: Waiting on human unblock", "NEXT_ACTION_TASK BLOCKED-1: Waiting on human unblock", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 0"],
             ),
             (
                 "blocked",
@@ -344,7 +346,29 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE blocked", "WORK_INVENTORY active=0 planned=0 review=1 blocked=1 dependency_waiting=0 stale=0", "ATTENTION_REQUIRED review", "NEXT_ACTION request_human_review", "ATTENTION_TASK REVIEW-1: Pending human review gate", "NEXT_ACTION_TASK REVIEW-1: Pending human review gate", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 1", "REVIEW REVIEW-1"],
+                ["STATE blocked", "STATE_REASON review_waiting", "WORK_INVENTORY active=0 planned=0 review=1 blocked=1 dependency_waiting=0 stale=0", "ATTENTION_REQUIRED review", "NEXT_ACTION request_human_review", "ATTENTION_TASK REVIEW-1: Pending human review gate", "NEXT_ACTION_TASK REVIEW-1: Pending human review gate", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 1", "REVIEW REVIEW-1"],
+            ),
+            (
+                "dependency_waiting",
+                {
+                    "version": 1,
+                    "updated_at": "2026-05-31T00:00:00Z",
+                    "tasks": [
+                        {
+                            "id": "WAIT-1",
+                            "title": "Waiting on prerequisite",
+                            "status": "pending",
+                            "priority": "high",
+                            "kind": "improvement",
+                            "safe": True,
+                            "requires_human_review": False,
+                            "done_condition": "Remain dependency-blocked.",
+                            "dependency_titles": ["Missing prerequisite"],
+                            "depends_on_task_ids": ["MISSING-1"],
+                        }
+                    ],
+                },
+                ["STATE planned", "STATE_REASON dependency_waiting", "WORK_INVENTORY active=0 planned=0 review=0 blocked=0 dependency_waiting=1 stale=0", "ATTENTION_REQUIRED none", "NEXT_ACTION wait_on_dependencies", "ATTENTION_TASK none", "NEXT_ACTION_TASK WAIT-1: Waiting on prerequisite", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0", "DEPENDENCY_WAITING 1", "WAITING WAIT-1: Waiting on prerequisite"],
             ),
         ]
 
@@ -741,6 +765,7 @@ def check_dependency_aware_selection() -> list[str]:
         failures = []
         for expected in [
             "STATE planned",
+            "STATE_REASON ready_safe_backlog",
             "WORK_INVENTORY active=0 planned=1 review=0 blocked=0 dependency_waiting=1 stale=0",
             "ATTENTION_REQUIRED none",
             "NEXT_ACTION execute_next_safe_task",
