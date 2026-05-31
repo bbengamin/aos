@@ -182,16 +182,16 @@ Consequences:
 - `scripts/episode` now performs `plan -> act -> review -> learn -> update` more completely
 - the next gap after planning is a long-running supervisor/daemon
 
-## 2026-05-31 - Prefer intentional human-reviewed commit batching
+## 2026-05-31 - Let iteration finalization decide commit and push automatically
 
 Decision:
-Do not auto-commit every completed AFK iteration by default. Leave completed changes in the worktree for human-reviewed batching, and if auto-commit is explicitly enabled, derive the commit message from the task summary instead of a generic iteration counter.
+Keep commit and push decisions inside the bounded iteration finalizer so humans do not need to manage them manually, but only create a commit when the iteration produced relevant tracked changes and always derive the message from the task summary instead of a generic iteration counter.
 
 Why:
-Per-iteration auto-commits created low-signal local history such as `agentic-os iteration N`, made review harder, and accumulated many unpushed commits with poor messages.
+Humans should not have to care about whether AFK needs to commit or push. The system should make that decision automatically, but low-signal `agentic-os iteration N` commits and large piles of unpushed local history are both poor outcomes.
 
 Consequences:
 
-- `scripts/episode` now defaults to no auto-commit
-- completed AFK work remains visible for human inspection and intentional grouping before push
-- any explicitly enabled auto-commit path must use a task-summary-based message instead of a generic iteration number
+- `scripts/episode` now decides whether a completed iteration warrants a commit
+- commit messages are summary-based and task-aware instead of generic iteration numbers
+- `scripts/episode` attempts a push only when an upstream exists and a new local commit was actually created

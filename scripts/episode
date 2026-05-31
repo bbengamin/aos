@@ -16,6 +16,7 @@ BLOCK_TASK = ROOT / "scripts" / "block-task"
 EVAL = ROOT / "scripts" / "eval"
 SUMMARY_PREFIX = "COMPLETION_SUMMARY:"
 BLOCK_PREFIX = "BLOCKED_BY_HUMAN:"
+FINALIZE_PATHS = ["README.md", "agents", "mission", "scripts"]
 
 
 def run(command: list[str], allow_failure: bool = False) -> int:
@@ -76,9 +77,79 @@ def commit_message_for(summary: str, task_id: str | None) -> str:
     return prefix + trimmed
 
 
+def changed_finalize_paths() -> list[str]:
+    result = subprocess.run(
+        ["git", "status", "--porcelain", "--", *FINALIZE_PATHS],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return []
+    return [line for line in result.stdout.splitlines() if line.strip()]
+
+
+def has_upstream() -> bool:
+    result = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
+
+
+def branch_has_unpushed_commits() -> bool:
+    if not has_upstream():
+        return False
+    result = subprocess.run(
+        ["git", "rev-list", "--count", "@{u}..HEAD"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return False
+    return result.stdout.strip().isdigit() and int(result.stdout.strip()) > 0
+
+
+def finalize_iteration(summary: str, task_id: str | None) -> None:
+    changed_paths = changed_finalize_paths()
+    if not changed_paths:
+        print("NO_COMMIT_NEEDED")
+        print("reason: no staged-scope changes were produced by this iteration")
+        return
+
+    run(["git", "add", *FINALIZE_PATHS], allow_failure=False)
+    status = run(["git", "commit", "-m", commit_message_for(summary, task_id)], allow_failure=True)
+    if status != 0:
+        print("COMMIT_SKIPPED")
+        print("reason: git commit did not create a new commit")
+        return
+
+    print("ITERATION_COMMITTED")
+
+    if not has_upstream():
+        print("PUSH_SKIPPED")
+        print("reason: no upstream branch is configured")
+        return
+
+    if not branch_has_unpushed_commits():
+        print("PUSH_SKIPPED")
+        print("reason: no local commits are waiting to be pushed")
+        return
+
+    push_status = run(["git", "push"], allow_failure=True)
+    if push_status != 0:
+        print("PUSH_SKIPPED")
+        print(f"reason: git push returned exit status {push_status}")
+        return
+
+    print("ITERATION_PUSHED")
+
+
 def main() -> int:
     max_iterations = int(os.environ.get("MAX_ITERATIONS", "30"))
-    auto_commit = os.environ.get("AOS_AUTO_COMMIT", "0") == "1"
     idle_iterations = 0
 
     for iteration in range(1, max_iterations + 1):
@@ -155,13 +226,7 @@ def main() -> int:
             print("Eval failed after task completion. Continue only if the next iteration is expected to fix it.")
             return status
 
-        if auto_commit:
-            run(["git", "status", "--short"], allow_failure=False)
-            run(["git", "add", "README.md", "agents", "mission", "scripts"], allow_failure=False)
-            run(["git", "commit", "-m", commit_message_for(completion_summary, selected_task_id)], allow_failure=True)
-        else:
-            print("AUTO_COMMIT_DISABLED")
-            print("reason: leave completed iteration changes for human review and intentional batching")
+        finalize_iteration(completion_summary, selected_task_id)
 
     print("Episode limit reached without completion.")
     return 1

@@ -77,6 +77,32 @@ def attention_task(*, attention: str, current: dict | None, review_waiting: list
     return None
 
 
+def next_action_task(
+    *,
+    attention: str,
+    current: dict | None,
+    next_task: dict | None,
+    dependency_waiting: list[dict],
+    review_waiting: list[dict],
+    blockers: list[dict],
+) -> dict | None:
+    task = attention_task(
+        attention=attention,
+        current=current,
+        review_waiting=review_waiting,
+        blockers=blockers,
+    )
+    if task:
+        return task
+    if current:
+        return current
+    if next_task:
+        return next_task
+    if dependency_waiting:
+        return dependency_waiting[0]
+    return None
+
+
 def next_action(*, attention: str, current: dict | None, next_task: dict | None, dependency_waiting: list[dict]) -> str:
     if attention == "review":
         return "request_human_review"
@@ -117,6 +143,14 @@ def main() -> int:
         review_waiting=review_waiting,
         blockers=blockers,
     )
+    next_action_task_item = next_action_task(
+        attention=attention,
+        current=current,
+        next_task=next_task,
+        dependency_waiting=dependency_waiting,
+        review_waiting=review_waiting,
+        blockers=blockers,
+    )
 
     print(
         f"STATE {overall_state(current=current, planned=planned, blockers=blockers, dependency_waiting=dependency_waiting, clean_idle=clean_idle)}"
@@ -129,6 +163,10 @@ def main() -> int:
         print(f"ATTENTION_TASK {attention_task_item['id']}: {attention_task_item['title']}")
     else:
         print("ATTENTION_TASK none")
+    if next_action_task_item:
+        print(f"NEXT_ACTION_TASK {next_action_task_item['id']}: {next_action_task_item['title']}")
+    else:
+        print("NEXT_ACTION_TASK none")
     print(f"CLEAN_IDLE_BLOCKED {'yes' if clean_idle else 'no'}")
 
     if current:
