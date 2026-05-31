@@ -3,9 +3,13 @@
 import sys
 
 from tasklib import (
+    age_seconds,
     blocked_tasks,
     current_in_progress_task,
+    format_age,
     is_clean_idle_blocked,
+    is_long_blocked_task,
+    is_stale_in_progress_task,
     latest_planning_event,
     load_tasks,
     next_safe_task,
@@ -23,6 +27,19 @@ def print_task(prefix: str, task: dict) -> None:
         print(f"  blocker_reason: {task['blocker_reason']}")
     if task.get("unblock_resolution"):
         print(f"  unblock_resolution: {task['unblock_resolution']}")
+
+    attention = None
+    attention_age = None
+    if is_stale_in_progress_task(task):
+        attention = "stale_in_progress"
+        attention_age = format_age(age_seconds(task.get("started_at")))
+    elif is_long_blocked_task(task):
+        attention = "long_blocked"
+        attention_age = format_age(age_seconds(task.get("blocked_at")))
+
+    if attention:
+        suffix = f" ({attention_age})" if attention_age else ""
+        print(f"  attention: {attention}{suffix}")
 
 
 def overall_state(*, current: dict | None, planned: list[dict], blockers: list[dict], clean_idle: bool) -> str:
@@ -54,6 +71,15 @@ def main() -> int:
         print_task("CURRENT ", current)
     else:
         print("CURRENT none")
+
+    stale_current = current if current and is_stale_in_progress_task(current) else None
+    long_blockers = [task for task in blockers if is_long_blocked_task(task)]
+    print(f"STALE_IN_PROGRESS {1 if stale_current else 0}")
+    if stale_current:
+        print(f"STALE CURRENT {stale_current['id']}: {stale_current['title']}")
+    print(f"LONG_BLOCKED {len(long_blockers)}")
+    for task in long_blockers:
+        print(f"STALE BLOCKED {task['id']}: {task['title']}")
 
     if next_task:
         print_task("NEXT ", next_task)

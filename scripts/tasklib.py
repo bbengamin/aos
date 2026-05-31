@@ -12,10 +12,38 @@ TASKS_PATH = ROOT / "mission" / "tasks.json"
 EXECUTION_LOG_PATH = ROOT / "mission" / "execution-log.ndjson"
 PRIORITY_RANK = {"high": 0, "medium": 1, "low": 2}
 AUTO_TASK_PREFIX = "AUTO"
+STALE_IN_PROGRESS_SECONDS = 24 * 60 * 60
+LONG_BLOCKED_SECONDS = 72 * 60 * 60
 
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def parse_utc_timestamp(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def age_seconds(value: str | None, *, now: datetime | None = None) -> int | None:
+    timestamp = parse_utc_timestamp(value)
+    if timestamp is None:
+        return None
+    reference = now or datetime.now(timezone.utc)
+    return max(0, int((reference - timestamp).total_seconds()))
+
+
+def format_age(seconds: int | None) -> str | None:
+    if seconds is None:
+        return None
+    hours = seconds // 3600
+    if hours < 48:
+        return f"{hours}h"
+    return f"{hours // 24}d"
 
 
 def load_tasks() -> dict:
@@ -79,6 +107,20 @@ def complete_task(task: dict, *, timestamp: str, summary: str) -> None:
 
 def blocked_tasks(data: dict) -> list[dict]:
     return [task for task in data.get("tasks", []) if task.get("blocked_by_human", False)]
+
+
+def is_stale_in_progress_task(task: dict, *, now: datetime | None = None) -> bool:
+    if task.get("status") != "in_progress":
+        return False
+    age = age_seconds(task.get("started_at"), now=now)
+    return age is not None and age >= STALE_IN_PROGRESS_SECONDS
+
+
+def is_long_blocked_task(task: dict, *, now: datetime | None = None) -> bool:
+    if not task.get("blocked_by_human", False):
+        return False
+    age = age_seconds(task.get("blocked_at"), now=now)
+    return age is not None and age >= LONG_BLOCKED_SECONDS
 
 
 def pending_unblocked_tasks(data: dict) -> list[dict]:

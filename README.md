@@ -45,7 +45,7 @@ It is intentionally file-first:
 - `./scripts/episode`: runs a bounded Ralph-style improvement episode and closes the active task after a passing eval and explicit `COMPLETION_SUMMARY`
 - `./scripts/afk`: runs `episode` with timestamped logging for unattended sessions
 - `./scripts/supervisor`: relaunches bounded AFK episodes, sleeps while work is cleanly idle-blocked, resumes when executable work appears, and records a structured summary for each AFK cycle
-- `./scripts/status`: summarizes whether the system is active, planned, blocked, or cleanly idle-blocked, and shows current work, planned work, and human blockers
+- `./scripts/status`: summarizes whether the system is active, planned, blocked, or cleanly idle-blocked, shows current work, planned work, human blockers, and flags stale work
 - `./scripts/block-task`: mark a task blocked with a human reason
 - `./scripts/unblock-task`: clear a blocker with a human resolution note
 - `./scripts/plan-next`: generate the next 1-3 safe tasks when the executable queue is empty
@@ -84,7 +84,7 @@ To see where human action is needed:
 ./scripts/status
 ```
 
-The place to look for blockers is `mission/tasks.json`, and the quickest human-readable view is `./scripts/status`. That command now reports a single overall `STATE`, whether the repo is in `CLEAN_IDLE_BLOCKED` mode, the current executable task, the planned safe backlog, the latest planner event with its rationale, and the blocked queue. `STATE blocked` means blockers exist but the repo is not in the clean idle-blocked state because some other pending work still exists, usually a review-gated risk task.
+The place to look for blockers is `mission/tasks.json`, and the quickest human-readable view is `./scripts/status`. That command now reports a single overall `STATE`, whether the repo is in `CLEAN_IDLE_BLOCKED` mode, the current executable task, the planned safe backlog, the latest planner event with its rationale, the blocked queue, and stale-work counters. `STALE_IN_PROGRESS` highlights work that has been in progress for more than a day, while `LONG_BLOCKED` highlights tasks that have been blocked by humans for more than three days. `STATE blocked` means blockers exist but the repo is not in the clean idle-blocked state because some other pending work still exists, usually a review-gated risk task.
 
 To block one task and keep the loop working on others:
 

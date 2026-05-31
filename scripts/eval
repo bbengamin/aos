@@ -408,6 +408,76 @@ def check_status_last_plan_summary() -> list[str]:
     return []
 
 
+def check_status_stale_work_indicators() -> list[str]:
+    if os.environ.get("AOS_SKIP_STATUS_SUMMARY_CHECK") == "1":
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+        tasks_path.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "updated_at": "2026-05-31T00:00:00Z",
+                    "tasks": [
+                        {
+                            "id": "ACTIVE-STALE-1",
+                            "title": "Old in-progress task",
+                            "status": "in_progress",
+                            "priority": "high",
+                            "kind": "improvement",
+                            "safe": True,
+                            "requires_human_review": False,
+                            "done_condition": "Remain active.",
+                            "started_at": "2026-05-28T00:00:00Z",
+                        },
+                        {
+                            "id": "BLOCKED-OLD-1",
+                            "title": "Old blocked task",
+                            "status": "pending",
+                            "priority": "medium",
+                            "kind": "risk",
+                            "safe": True,
+                            "requires_human_review": False,
+                            "blocked_by_human": True,
+                            "blocked_at": "2026-05-25T00:00:00Z",
+                            "blocker_reason": "Need a human decision.",
+                            "done_condition": "Remain blocked.",
+                        },
+                    ],
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+
+        result = subprocess.run(
+            [str(tmp_root / "scripts" / "status")],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "AOS_SKIP_STATUS_SUMMARY_CHECK": "1"},
+        )
+        if result.returncode != 0:
+            return [f"status script failed in stale-work integration check: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+
+        failures = []
+        for expected in [
+            "STALE_IN_PROGRESS 1",
+            "STALE CURRENT ACTIVE-STALE-1: Old in-progress task",
+            "LONG_BLOCKED 1",
+            "STALE BLOCKED BLOCKED-OLD-1: Old blocked task",
+            "attention: stale_in_progress",
+            "attention: long_blocked",
+        ]:
+            if expected not in result.stdout:
+                failures.append(f"status script did not report {expected!r} in the stale-work integration check")
+        return failures
+
+
 def check_blocker_commands() -> list[str]:
     block_text = (ROOT / "scripts" / "block-task").read_text()
     unblock_text = (ROOT / "scripts" / "unblock-task").read_text()
@@ -1380,6 +1450,7 @@ def main() -> int:
     failures.extend(check_blocker_model())
     failures.extend(check_status_summary_modes())
     failures.extend(check_status_last_plan_summary())
+    failures.extend(check_status_stale_work_indicators())
     failures.extend(check_blocker_commands())
     failures.extend(check_planning_loop())
     failures.extend(check_plan_next_generates_tasks())

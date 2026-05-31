@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T15:05:54Z",
+  "updated_at": "2026-05-31T15:08:37Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -278,7 +278,7 @@
     {
       "id": "AUTO-9",
       "title": "Add stale-work status indicators",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -286,7 +286,10 @@
       "done_condition": "Status output highlights stale in-progress or long-blocked tasks so humans can spot neglected work quickly.",
       "notes": "Improves human supervision once the backlog and history get larger.",
       "planning_reason": "After richer status reporting exists, the next safe improvement is to surface neglected work so humans can intervene earlier.",
-      "planned_at": "2026-05-31T14:58:42Z"
+      "planned_at": "2026-05-31T14:58:42Z",
+      "started_at": "2026-05-31T15:06:01Z",
+      "completed_at": "2026-05-31T15:08:37Z",
+      "completion_summary": "Added stale-work indicators to `scripts/status` for aging in-progress and long-blocked tasks, backed by shared timestamp helpers, README docs, and passing `./scripts/eval` coverage."
     }
   ]
 }
