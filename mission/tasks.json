@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T17:03:55Z",
+  "updated_at": "2026-05-31T17:06:52Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -779,7 +779,7 @@
       "id": "AUTO-30",
       "title": "Refine operator status summaries batch 6",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -795,7 +795,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T16:53:37Z"
+      "planned_at": "2026-05-31T16:53:37Z",
+      "started_at": "2026-05-31T17:04:08Z",
+      "completed_at": "2026-05-31T17:06:52Z",
+      "completion_summary": "Added a top-level `WORK_INVENTORY` summary line to `./scripts/status`, extended `./scripts/eval` to verify it across active/planned/blocked/stale/dependency scenarios, and documented the new status signal in `README.md`."
     }
   ]
 }

@@ -103,6 +103,30 @@ def next_action_task(
     if dependency_waiting:
         return dependency_waiting[0]
     return None
+
+
+def work_inventory(
+    *,
+    current: dict | None,
+    planned: list[dict],
+    blockers: list[dict],
+    review_waiting: list[dict],
+    dependency_waiting: list[dict],
+) -> str:
+    stale_count = (1 if current and is_stale_in_progress_task(current) else 0) + sum(
+        1 for task in blockers if is_long_blocked_task(task)
+    )
+    return (
+        "WORK_INVENTORY"
+        f" active={1 if current else 0}"
+        f" planned={len(planned)}"
+        f" review={len(review_waiting)}"
+        f" blocked={len(blockers)}"
+        f" dependency_waiting={len(dependency_waiting)}"
+        f" stale={stale_count}"
+    )
+
+
 def main() -> int:
     data = load_tasks()
 
@@ -132,6 +156,15 @@ def main() -> int:
 
     print(
         f"STATE {overall_state(current=current, planned=planned, blockers=blockers, dependency_waiting=dependency_waiting, clean_idle=clean_idle)}"
+    )
+    print(
+        work_inventory(
+            current=current,
+            planned=planned,
+            blockers=blockers,
+            review_waiting=review_waiting,
+            dependency_waiting=dependency_waiting,
+        )
     )
     print(f"ATTENTION_REQUIRED {attention}")
     print(
