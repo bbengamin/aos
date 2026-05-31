@@ -71,6 +71,10 @@ def print_candidate(candidate: dict) -> None:
     if theme_open_task_titles:
         print(f"  theme_open_task_titles: {', '.join(theme_open_task_titles)}")
 
+    theme_open_task_refs = candidate.get("theme_open_task_refs", [])
+    if theme_open_task_refs:
+        print(f"  theme_open_task_refs: {', '.join(theme_open_task_refs)}")
+
     planner_batch_task_titles = candidate.get("planner_batch_task_titles", [])
     if planner_batch_task_titles:
         print(f"  planner_batch_task_titles: {', '.join(planner_batch_task_titles)}")

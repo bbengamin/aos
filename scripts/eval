@@ -1588,6 +1588,7 @@ def check_planner_candidate_theme_limit_explanations() -> list[str]:
             "  theme_open_tasks: 1",
             "  theme_open_task_ids: AUTO-5",
             "  theme_open_task_titles: Existing planner refinement already in progress",
+            "  theme_open_task_refs: AUTO-5: Existing planner refinement already in progress (in_progress)",
         ]:
             if expected not in result.stdout:
                 failures.append(f"planner-candidates did not report {expected!r} in the theme-limit explanation check")

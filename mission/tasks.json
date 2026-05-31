@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T20:32:26Z",
+  "updated_at": "2026-05-31T20:35:32Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -1429,7 +1429,7 @@
       "id": "AUTO-56",
       "title": "Refine planner backlog generation heuristics batch 15",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -1445,7 +1445,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T20:28:58Z"
+      "planned_at": "2026-05-31T20:28:58Z",
+      "started_at": "2026-05-31T20:32:41Z",
+      "completed_at": "2026-05-31T20:35:32Z",
+      "completion_summary": "added readable `theme_open_task_refs` to `./scripts/planner-candidates` for theme-limit blockers, documented the new planner audit signal in `README.md`, and verified it with a passing `./scripts/eval`"
     },
     {
       "id": "AUTO-57",

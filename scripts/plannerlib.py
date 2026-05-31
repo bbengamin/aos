@@ -318,6 +318,21 @@ def auto_task_refs(tasks: list[dict]) -> list[str]:
     return refs
 
 
+def task_refs_with_status(tasks: list[dict]) -> list[str]:
+    refs = []
+    for task in tasks:
+        task_id = task.get("id")
+        title = task.get("title")
+        status = task.get("status")
+        if task_id and title and status:
+            refs.append(f"{task_id}: {title} ({status})")
+        elif task_id and title:
+            refs.append(f"{task_id}: {title}")
+        elif task_id:
+            refs.append(task_id)
+    return refs
+
+
 def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -> list[dict]:
     existing_auto = [task for task in data.get("tasks", []) if task.get("id", "").startswith("AUTO-")]
     existing_auto_ids = [task.get("id") for task in existing_auto if task.get("id")]
@@ -376,6 +391,7 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
                 candidate["theme_open_tasks"] = theme_counts.get(template["theme"], 0)
                 candidate["theme_open_task_ids"] = [task.get("id") for task in open_tasks if task.get("id")]
                 candidate["theme_open_task_titles"] = [task.get("title") for task in open_tasks if task.get("title")]
+                candidate["theme_open_task_refs"] = task_refs_with_status(open_tasks)
             elif planned_count >= PLANNER_BATCH_SIZE:
                 candidate["status"] = "blocked"
                 candidate["reason"] = "planner_batch_full"
