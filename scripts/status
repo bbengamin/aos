@@ -4,6 +4,7 @@ import sys
 
 from tasklib import (
     attention_required,
+    attention_task,
     age_seconds,
     blocked_tasks,
     current_in_progress_task,
@@ -16,6 +17,7 @@ from tasklib import (
     latest_planning_event,
     load_tasks,
     next_action,
+    next_action_task,
     next_safe_task,
     pending_safe_tasks,
     review_waiting_tasks,
@@ -62,47 +64,6 @@ def overall_state(*, current: dict | None, planned: list[dict], blockers: list[d
     if blockers:
         return "blocked"
     return "idle"
-
-
-def attention_task(*, attention: str, current: dict | None, review_waiting: list[dict], blockers: list[dict]) -> dict | None:
-    if attention == "review":
-        return review_waiting[0] if review_waiting else None
-    if attention == "stale":
-        if current and is_stale_in_progress_task(current):
-            return current
-        for task in blockers:
-            if is_long_blocked_task(task):
-                return task
-        return None
-    if attention == "unblock":
-        return blockers[0] if blockers else None
-    return None
-
-
-def next_action_task(
-    *,
-    attention: str,
-    current: dict | None,
-    next_task: dict | None,
-    dependency_waiting: list[dict],
-    review_waiting: list[dict],
-    blockers: list[dict],
-) -> dict | None:
-    task = attention_task(
-        attention=attention,
-        current=current,
-        review_waiting=review_waiting,
-        blockers=blockers,
-    )
-    if task:
-        return task
-    if current:
-        return current
-    if next_task:
-        return next_task
-    if dependency_waiting:
-        return dependency_waiting[0]
-    return None
 
 
 def work_inventory(

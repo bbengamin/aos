@@ -206,6 +206,21 @@ def attention_required(data: dict) -> str:
     return "none"
 
 
+def attention_task(*, attention: str, current: dict | None, review_waiting: list[dict], blockers: list[dict]) -> dict | None:
+    if attention == "review":
+        return review_waiting[0] if review_waiting else None
+    if attention == "stale":
+        if current and is_stale_in_progress_task(current):
+            return current
+        for task in blockers:
+            if is_long_blocked_task(task):
+                return task
+        return None
+    if attention == "unblock":
+        return blockers[0] if blockers else None
+    return None
+
+
 def next_action(*, attention: str, current: dict | None, next_task: dict | None, dependency_waiting: list[dict]) -> str:
     if attention == "review":
         return "request_human_review"
@@ -220,6 +235,32 @@ def next_action(*, attention: str, current: dict | None, next_task: dict | None,
     if dependency_waiting:
         return "wait_on_dependencies"
     return "idle"
+
+
+def next_action_task(
+    *,
+    attention: str,
+    current: dict | None,
+    next_task: dict | None,
+    dependency_waiting: list[dict],
+    review_waiting: list[dict],
+    blockers: list[dict],
+) -> dict | None:
+    task = attention_task(
+        attention=attention,
+        current=current,
+        review_waiting=review_waiting,
+        blockers=blockers,
+    )
+    if task:
+        return task
+    if current:
+        return current
+    if next_task:
+        return next_task
+    if dependency_waiting:
+        return dependency_waiting[0]
+    return None
 
 
 def pending_safe_tasks(data: dict) -> list[dict]:

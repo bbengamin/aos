@@ -9,14 +9,17 @@ from pathlib import Path
 from tasklib import (
     attention_required,
     append_execution_event,
+    blocked_tasks,
     current_in_progress_task,
     dependency_waiting_tasks,
     has_executable_safe_task,
     is_clean_idle_blocked,
     load_tasks,
     next_action,
+    next_action_task,
     next_safe_task,
     pending_safe_tasks,
+    review_waiting_tasks,
     utc_now,
 )
 
@@ -35,6 +38,7 @@ def record_cycle_outcome(
     afk_exit_status: int | None = None,
     completed_tasks: list[dict] | None = None,
     next_task: dict | None = None,
+    suggested_action_task: dict | None = None,
     remaining_safe_tasks: int | None = None,
 ) -> None:
     event = {
@@ -54,6 +58,9 @@ def record_cycle_outcome(
     if next_task is not None:
         event["next_task_id"] = next_task.get("id")
         event["next_task_title"] = next_task.get("title")
+    if suggested_action_task is not None:
+        event["suggested_action_task_id"] = suggested_action_task.get("id")
+        event["suggested_action_task_title"] = suggested_action_task.get("title")
     if remaining_safe_tasks is not None:
         event["remaining_safe_tasks"] = remaining_safe_tasks
     append_execution_event(event)
@@ -73,6 +80,10 @@ def record_cycle_outcome(
         parts.append(f"next_task_id={next_task.get('id')}")
         if next_task.get("title"):
             parts.append(f"next_task_title={next_task.get('title')!r}")
+    if suggested_action_task is not None:
+        parts.append(f"suggested_action_task_id={suggested_action_task.get('id')}")
+        if suggested_action_task.get("title"):
+            parts.append(f"suggested_action_task_title={suggested_action_task.get('title')!r}")
     if remaining_safe_tasks is not None:
         parts.append(f"remaining_safe_tasks={remaining_safe_tasks}")
     print(" ".join(parts))
@@ -110,11 +121,24 @@ def main() -> int:
         if has_executable_safe_task(data):
             pre_cycle_data = data
             pre_cycle_attention = attention_required(pre_cycle_data)
+            pre_cycle_current = current_in_progress_task(pre_cycle_data)
+            pre_cycle_next_task = next_safe_task(pre_cycle_data)
+            pre_cycle_dependency_waiting = dependency_waiting_tasks(pre_cycle_data)
+            pre_cycle_review_waiting = review_waiting_tasks(pre_cycle_data)
+            pre_cycle_blockers = blocked_tasks(pre_cycle_data)
             pre_cycle_suggested_action = next_action(
                 attention=pre_cycle_attention,
-                current=current_in_progress_task(pre_cycle_data),
-                next_task=next_safe_task(pre_cycle_data),
-                dependency_waiting=dependency_waiting_tasks(pre_cycle_data),
+                current=pre_cycle_current,
+                next_task=pre_cycle_next_task,
+                dependency_waiting=pre_cycle_dependency_waiting,
+            )
+            pre_cycle_suggested_action_task = next_action_task(
+                attention=pre_cycle_attention,
+                current=pre_cycle_current,
+                next_task=pre_cycle_next_task,
+                dependency_waiting=pre_cycle_dependency_waiting,
+                review_waiting=pre_cycle_review_waiting,
+                blockers=pre_cycle_blockers,
             )
             if max_cycles and launched_cycles >= max_cycles:
                 print("SUPERVISOR_STOPPED")
@@ -132,6 +156,7 @@ def main() -> int:
                     attention=pre_cycle_attention,
                     suggested_action=pre_cycle_suggested_action,
                     afk_exit_status=status,
+                    suggested_action_task=pre_cycle_suggested_action_task,
                 )
                 print(f"SUPERVISOR_FAILED afk_exit_status={status}")
                 return status
@@ -142,20 +167,33 @@ def main() -> int:
             next_task = next_safe_task(post_cycle_data) if cycle_outcome == "progress" else None
             remaining_safe_tasks = len(pending_safe_tasks(post_cycle_data))
             post_cycle_attention = attention_required(post_cycle_data)
+            post_cycle_current = current_in_progress_task(post_cycle_data)
+            post_cycle_dependency_waiting = dependency_waiting_tasks(post_cycle_data)
+            post_cycle_review_waiting = review_waiting_tasks(post_cycle_data)
+            post_cycle_blockers = blocked_tasks(post_cycle_data)
+            post_cycle_suggested_action = next_action(
+                attention=post_cycle_attention,
+                current=post_cycle_current,
+                next_task=next_task,
+                dependency_waiting=post_cycle_dependency_waiting,
+            )
             record_cycle_outcome(
                 cycle=launched_cycles,
                 episode_iterations=episode_iterations,
                 outcome=cycle_outcome,
                 attention=post_cycle_attention,
-                suggested_action=next_action(
-                    attention=post_cycle_attention,
-                    current=current_in_progress_task(post_cycle_data),
-                    next_task=next_task,
-                    dependency_waiting=dependency_waiting_tasks(post_cycle_data),
-                ),
+                suggested_action=post_cycle_suggested_action,
                 afk_exit_status=status,
                 completed_tasks=completed_tasks,
                 next_task=next_task,
+                suggested_action_task=next_action_task(
+                    attention=post_cycle_attention,
+                    current=post_cycle_current,
+                    next_task=next_task,
+                    dependency_waiting=post_cycle_dependency_waiting,
+                    review_waiting=post_cycle_review_waiting,
+                    blockers=post_cycle_blockers,
+                ),
                 remaining_safe_tasks=remaining_safe_tasks,
             )
 

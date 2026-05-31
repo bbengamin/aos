@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T17:06:52Z",
+  "updated_at": "2026-05-31T19:03:00Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -799,6 +799,75 @@
       "started_at": "2026-05-31T17:04:08Z",
       "completed_at": "2026-05-31T17:06:52Z",
       "completion_summary": "Added a top-level `WORK_INVENTORY` summary line to `./scripts/status`, extended `./scripts/eval` to verify it across active/planned/blocked/stale/dependency scenarios, and documented the new status signal in `README.md`."
+    },
+    {
+      "id": "AUTO-31",
+      "title": "Refine supervisor cycle outcome summaries batch 7",
+      "theme": "supervisor",
+      "status": "done",
+      "priority": "medium",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "Batch 7 extends supervisor cycle summaries with one more actionable operator signal while preserving bounded local execution.",
+      "notes": "Follow-up batch 7 keeps the supervisor observable without expanding into risky automation.",
+      "planning_reason": "Supervisor summary coverage exists, so batch 7 should tighten what each AFK cycle reports back to humans.",
+      "generator_key": "supervisor_follow_up",
+      "follow_up_batch": 7,
+      "depends_on_task_ids": [
+        "AUTO-7"
+      ],
+      "dependency_titles": [
+        "Add supervisor cycle outcome summaries"
+      ],
+      "planned_at": "2026-05-31T17:07:05Z",
+      "started_at": "2026-05-31T17:07:05Z",
+      "completed_at": "2026-05-31T19:03:00Z",
+      "completion_summary": "Added concrete `suggested_action_task_id` and `suggested_action_task_title` to supervisor cycle summaries, shared the action-target selection logic through `scripts/tasklib.py`, updated `README.md`, and extended `./scripts/eval` to verify the new supervisor summary signal."
+    },
+    {
+      "id": "AUTO-32",
+      "title": "Refine planner backlog generation heuristics batch 7",
+      "theme": "planner",
+      "status": "pending",
+      "priority": "medium",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "Batch 7 improves planner candidate selection or explanation quality without introducing unsafe autonomous scope.",
+      "notes": "Follow-up batch 7 keeps self-generated work varied and inspectable.",
+      "planning_reason": "Planner backlog controls now exist, so batch 7 should improve how the planner derives or explains fresh safe work.",
+      "generator_key": "planner_follow_up",
+      "follow_up_batch": 7,
+      "depends_on_task_ids": [
+        "AUTO-12"
+      ],
+      "dependency_titles": [
+        "Add planner candidate audit command"
+      ],
+      "planned_at": "2026-05-31T17:07:05Z"
+    },
+    {
+      "id": "AUTO-33",
+      "title": "Refine operator status summaries batch 7",
+      "theme": "status",
+      "status": "pending",
+      "priority": "medium",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "Batch 7 adds one more useful status signal that helps a human distinguish active, waiting, stale, and blocked work at a glance.",
+      "notes": "Follow-up batch 7 keeps the operator view concise but more informative.",
+      "planning_reason": "Status reporting already covers the main states, so batch 7 should sharpen the operator summary instead of widening system scope.",
+      "generator_key": "status_follow_up",
+      "follow_up_batch": 7,
+      "depends_on_task_ids": [
+        "AUTO-9"
+      ],
+      "dependency_titles": [
+        "Add stale-work status indicators"
+      ],
+      "planned_at": "2026-05-31T17:07:05Z"
     }
   ]
 }
