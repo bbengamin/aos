@@ -20,6 +20,7 @@ from tasklib import (
     next_safe_task,
     overall_state,
     pending_safe_tasks,
+    queue_health,
     review_waiting_tasks,
     state_reason,
     utc_now,
@@ -37,6 +38,7 @@ def record_cycle_outcome(
     outcome: str,
     repo_state: str,
     repo_state_reason: str,
+    queue_health_state: str,
     attention: str,
     suggested_action: str,
     afk_exit_status: int | None = None,
@@ -53,6 +55,7 @@ def record_cycle_outcome(
         "outcome": outcome,
         "repo_state": repo_state,
         "repo_state_reason": repo_state_reason,
+        "queue_health": queue_health_state,
         "attention_required": attention,
         "suggested_action": suggested_action,
     }
@@ -72,7 +75,7 @@ def record_cycle_outcome(
     append_execution_event(event)
 
     parts = [
-        f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome} repo_state={repo_state} repo_state_reason={repo_state_reason} attention_required={attention} suggested_action={suggested_action}"
+        f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome} repo_state={repo_state} repo_state_reason={repo_state_reason} queue_health={queue_health_state} attention_required={attention} suggested_action={suggested_action}"
     ]
     if afk_exit_status is not None:
         parts.append(f"afk_exit_status={afk_exit_status}")
@@ -177,6 +180,13 @@ def main() -> int:
                         clean_idle=pre_cycle_clean_idle,
                         attention=pre_cycle_attention,
                     ),
+                    queue_health_state=queue_health(
+                        current=pre_cycle_current,
+                        planned=pre_cycle_planned,
+                        blockers=pre_cycle_blockers,
+                        review_waiting=pre_cycle_review_waiting,
+                        dependency_waiting=pre_cycle_dependency_waiting,
+                    ),
                     attention=pre_cycle_attention,
                     suggested_action=pre_cycle_suggested_action,
                     afk_exit_status=status,
@@ -222,6 +232,13 @@ def main() -> int:
                     dependency_waiting=post_cycle_dependency_waiting,
                     clean_idle=post_cycle_clean_idle,
                     attention=post_cycle_attention,
+                ),
+                queue_health_state=queue_health(
+                    current=post_cycle_current,
+                    planned=post_cycle_planned,
+                    blockers=post_cycle_blockers,
+                    review_waiting=post_cycle_review_waiting,
+                    dependency_waiting=post_cycle_dependency_waiting,
                 ),
                 attention=post_cycle_attention,
                 suggested_action=post_cycle_suggested_action,

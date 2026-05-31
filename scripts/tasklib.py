@@ -211,6 +211,35 @@ def overall_state(
     return "idle"
 
 
+def queue_health(
+    *,
+    current: dict | None,
+    planned: list[dict],
+    blockers: list[dict],
+    review_waiting: list[dict],
+    dependency_waiting: list[dict],
+) -> str:
+    if current and is_stale_in_progress_task(current):
+        return "stale_active"
+    if current:
+        return "active_only"
+    if review_waiting:
+        return "review_waiting"
+    if any(is_long_blocked_task(task) for task in blockers):
+        return "stale_blocked"
+    if blockers and (planned or dependency_waiting):
+        return "mixed_blocked_and_ready"
+    if blockers:
+        return "blocked_only"
+    if planned and dependency_waiting:
+        return "mixed_ready_and_dependencies"
+    if planned:
+        return "ready_backlog"
+    if dependency_waiting:
+        return "dependency_waiting_only"
+    return "empty"
+
+
 def attention_required(data: dict) -> str:
     current = current_in_progress_task(data)
     blockers = blocked_tasks(data)
