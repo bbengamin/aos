@@ -320,6 +320,16 @@ def next_action_task(
     return None
 
 
+def waiting_on(*, review_waiting: list[dict], blockers: list[dict], dependency_waiting: list[dict]) -> str:
+    if review_waiting:
+        return "human_review"
+    if blockers:
+        return "human_unblock"
+    if dependency_waiting:
+        return "dependencies"
+    return "none"
+
+
 def state_reason(
     *,
     current: dict | None,

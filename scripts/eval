@@ -232,6 +232,8 @@ def check_blocker_model() -> list[str]:
         return ["status script output did not include an attention-required summary"]
     if "NEXT_ACTION " not in result.stdout:
         return ["status script output did not include a next-action summary"]
+    if "WAITING_ON " not in result.stdout:
+        return ["status script output did not include a waiting-on summary"]
     if "NEXT_ACTION_TASK " not in result.stdout:
         return ["status script output did not include a next-action task summary"]
     if "WORK_INVENTORY " not in result.stdout:
@@ -275,7 +277,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE active", "STATE_REASON current_in_progress", "WORK_INVENTORY active=1 planned=0 review=0 blocked=0 dependency_waiting=0 stale=0", "QUEUE_HEALTH active_only", "EXECUTABLE_SAFE_TASKS 1", "ATTENTION_REQUIRED none", "NEXT_ACTION continue_current", "ATTENTION_TASK none", "NEXT_ACTION_TASK ACTIVE-1: Current active task", "CLEAN_IDLE_BLOCKED no", "CURRENT ACTIVE-1", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0"],
+                ["STATE active", "STATE_REASON current_in_progress", "WORK_INVENTORY active=1 planned=0 review=0 blocked=0 dependency_waiting=0 stale=0", "QUEUE_HEALTH active_only", "EXECUTABLE_SAFE_TASKS 1", "ATTENTION_REQUIRED none", "NEXT_ACTION continue_current", "WAITING_ON none", "ATTENTION_TASK none", "NEXT_ACTION_TASK ACTIVE-1: Current active task", "CLEAN_IDLE_BLOCKED no", "CURRENT ACTIVE-1", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0"],
             ),
             (
                 "planned",
@@ -296,7 +298,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE planned", "STATE_REASON ready_safe_backlog", "WORK_INVENTORY active=0 planned=1 review=0 blocked=0 dependency_waiting=0 stale=0", "QUEUE_HEALTH ready_backlog", "EXECUTABLE_SAFE_TASKS 1", "ATTENTION_REQUIRED none", "NEXT_ACTION execute_next_safe_task", "ATTENTION_TASK none", "NEXT_ACTION_TASK AUTO-1: Planned follow-up", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT AUTO-1", "PLANNED_WORK 1", "PLANNED AUTO-1", "BLOCKERS 0", "REVIEW_WAITING 0"],
+                ["STATE planned", "STATE_REASON ready_safe_backlog", "WORK_INVENTORY active=0 planned=1 review=0 blocked=0 dependency_waiting=0 stale=0", "QUEUE_HEALTH ready_backlog", "EXECUTABLE_SAFE_TASKS 1", "ATTENTION_REQUIRED none", "NEXT_ACTION execute_next_safe_task", "WAITING_ON none", "ATTENTION_TASK none", "NEXT_ACTION_TASK AUTO-1: Planned follow-up", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT AUTO-1", "PLANNED_WORK 1", "PLANNED AUTO-1", "BLOCKERS 0", "REVIEW_WAITING 0"],
             ),
             (
                 "clean_idle_blocked",
@@ -318,7 +320,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE clean_idle_blocked", "STATE_REASON human_blocked_only", "WORK_INVENTORY active=0 planned=0 review=0 blocked=1 dependency_waiting=0 stale=0", "QUEUE_HEALTH blocked_only", "EXECUTABLE_SAFE_TASKS 0", "ATTENTION_REQUIRED unblock", "NEXT_ACTION unblock_human_task", "ATTENTION_TASK BLOCKED-1: Waiting on human unblock", "NEXT_ACTION_TASK BLOCKED-1: Waiting on human unblock", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 0"],
+                ["STATE clean_idle_blocked", "STATE_REASON human_blocked_only", "WORK_INVENTORY active=0 planned=0 review=0 blocked=1 dependency_waiting=0 stale=0", "QUEUE_HEALTH blocked_only", "EXECUTABLE_SAFE_TASKS 0", "ATTENTION_REQUIRED unblock", "NEXT_ACTION unblock_human_task", "WAITING_ON human_unblock", "ATTENTION_TASK BLOCKED-1: Waiting on human unblock", "NEXT_ACTION_TASK BLOCKED-1: Waiting on human unblock", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 0"],
             ),
             (
                 "blocked",
@@ -350,7 +352,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE blocked", "STATE_REASON review_waiting", "WORK_INVENTORY active=0 planned=0 review=1 blocked=1 dependency_waiting=0 stale=0", "QUEUE_HEALTH review_waiting", "EXECUTABLE_SAFE_TASKS 0", "ATTENTION_REQUIRED review", "NEXT_ACTION request_human_review", "ATTENTION_TASK REVIEW-1: Pending human review gate", "NEXT_ACTION_TASK REVIEW-1: Pending human review gate", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 1", "REVIEW REVIEW-1"],
+                ["STATE blocked", "STATE_REASON review_waiting", "WORK_INVENTORY active=0 planned=0 review=1 blocked=1 dependency_waiting=0 stale=0", "QUEUE_HEALTH review_waiting", "EXECUTABLE_SAFE_TASKS 0", "ATTENTION_REQUIRED review", "NEXT_ACTION request_human_review", "WAITING_ON human_review", "ATTENTION_TASK REVIEW-1: Pending human review gate", "NEXT_ACTION_TASK REVIEW-1: Pending human review gate", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 1", "REVIEW REVIEW-1"],
             ),
             (
                 "dependency_waiting",
@@ -372,7 +374,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE planned", "STATE_REASON dependency_waiting", "WORK_INVENTORY active=0 planned=0 review=0 blocked=0 dependency_waiting=1 stale=0", "QUEUE_HEALTH dependency_waiting_only", "EXECUTABLE_SAFE_TASKS 0", "ATTENTION_REQUIRED none", "NEXT_ACTION wait_on_dependencies", "ATTENTION_TASK none", "NEXT_ACTION_TASK WAIT-1: Waiting on prerequisite", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0", "DEPENDENCY_WAITING 1", "WAITING WAIT-1: Waiting on prerequisite"],
+                ["STATE planned", "STATE_REASON dependency_waiting", "WORK_INVENTORY active=0 planned=0 review=0 blocked=0 dependency_waiting=1 stale=0", "QUEUE_HEALTH dependency_waiting_only", "EXECUTABLE_SAFE_TASKS 0", "ATTENTION_REQUIRED none", "NEXT_ACTION wait_on_dependencies", "WAITING_ON dependencies", "ATTENTION_TASK none", "NEXT_ACTION_TASK WAIT-1: Waiting on prerequisite", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0", "DEPENDENCY_WAITING 1", "WAITING WAIT-1: Waiting on prerequisite"],
             ),
         ]
 
@@ -533,6 +535,7 @@ def check_status_stale_work_indicators() -> list[str]:
             "EXECUTABLE_SAFE_TASKS 1",
             "ATTENTION_REQUIRED stale",
             "NEXT_ACTION investigate_stale_work",
+            "WAITING_ON human_unblock",
             "ATTENTION_TASK ACTIVE-STALE-1: Old in-progress task",
             "NEXT_ACTION_TASK ACTIVE-STALE-1: Old in-progress task",
             "STALE_IN_PROGRESS 1",
@@ -777,6 +780,7 @@ def check_dependency_aware_selection() -> list[str]:
             "EXECUTABLE_SAFE_TASKS 1",
             "ATTENTION_REQUIRED none",
             "NEXT_ACTION execute_next_safe_task",
+            "WAITING_ON dependencies",
             "NEXT_ACTION_TASK READY-1: Task with resolved dependency",
             "NEXT READY-1: Task with resolved dependency",
             "DEPENDENCY_WAITING 1",
