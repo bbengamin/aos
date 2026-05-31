@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T20:07:17Z",
+  "updated_at": "2026-05-31T20:10:41Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -1279,7 +1279,7 @@
       "id": "AUTO-50",
       "title": "Refine planner backlog generation heuristics batch 13",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -1295,7 +1295,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T20:04:28Z"
+      "planned_at": "2026-05-31T20:04:28Z",
+      "started_at": "2026-05-31T20:07:35Z",
+      "completed_at": "2026-05-31T20:10:41Z",
+      "completion_summary": "added readable `auto_task_refs` to `./scripts/planner-candidates` for AUTO-budget-exhausted candidates, extended `./scripts/eval` to verify that signal, and documented the new audit detail in `README.md`"
     },
     {
       "id": "AUTO-51",

@@ -932,6 +932,7 @@ def check_planner_candidates_budget_exhausted_explanation() -> list[str]:
             "  auto_task_budget_limit: 1",
             "  auto_task_budget_count: 1",
             "  auto_task_ids: AUTO-1",
+            "  auto_task_refs: AUTO-1: Existing auto task",
             "BLOCKED Refine planner backlog generation heuristics batch 1",
             "  generator_key: planner_follow_up",
             "  follow_up_batch: 1",

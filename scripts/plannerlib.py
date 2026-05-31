@@ -306,9 +306,22 @@ def planner_gate_task_states(tasks: list[dict]) -> list[str]:
     return task_states
 
 
+def auto_task_refs(tasks: list[dict]) -> list[str]:
+    refs = []
+    for task in tasks:
+        task_id = task.get("id")
+        title = task.get("title")
+        if task_id and title:
+            refs.append(f"{task_id}: {title}")
+        elif task_id:
+            refs.append(task_id)
+    return refs
+
+
 def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -> list[dict]:
     existing_auto = [task for task in data.get("tasks", []) if task.get("id", "").startswith("AUTO-")]
     existing_auto_ids = [task.get("id") for task in existing_auto if task.get("id")]
+    existing_auto_refs = auto_task_refs(existing_auto)
     theme_tasks = open_theme_tasks(data)
     theme_counts = {theme: len(tasks) for theme, tasks in theme_tasks.items()}
     planned_count = 0
@@ -350,6 +363,7 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
                 candidate["auto_task_budget_limit"] = max_auto_tasks
                 candidate["auto_task_budget_count"] = len(existing_auto)
                 candidate["auto_task_ids"] = existing_auto_ids
+                candidate["auto_task_refs"] = existing_auto_refs
             elif missing_titles:
                 candidate["status"] = "blocked"
                 candidate["reason"] = "waiting_on_done_titles"
