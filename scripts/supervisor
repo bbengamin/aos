@@ -19,6 +19,7 @@ def record_cycle_outcome(
     episode_iterations: str,
     outcome: str,
     afk_exit_status: int | None = None,
+    completed_tasks: list[dict] | None = None,
     next_task: dict | None = None,
 ) -> None:
     event = {
@@ -30,6 +31,9 @@ def record_cycle_outcome(
     }
     if afk_exit_status is not None:
         event["afk_exit_status"] = afk_exit_status
+    if completed_tasks:
+        event["completed_task_ids"] = [task.get("id") for task in completed_tasks if task.get("id")]
+        event["completed_task_titles"] = [task.get("title") for task in completed_tasks if task.get("title")]
     if next_task is not None:
         event["next_task_id"] = next_task.get("id")
         event["next_task_title"] = next_task.get("title")
@@ -38,11 +42,29 @@ def record_cycle_outcome(
     parts = [f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome}"]
     if afk_exit_status is not None:
         parts.append(f"afk_exit_status={afk_exit_status}")
+    if completed_tasks:
+        parts.append(f"completed_count={len(completed_tasks)}")
+        parts.append(f"completed_task_ids={','.join(task.get('id') for task in completed_tasks if task.get('id'))}")
     if next_task is not None:
         parts.append(f"next_task_id={next_task.get('id')}")
         if next_task.get("title"):
             parts.append(f"next_task_title={next_task.get('title')!r}")
     print(" ".join(parts))
+
+
+def completed_tasks_during_cycle(pre_cycle_data: dict, post_cycle_data: dict) -> list[dict]:
+    pre_cycle_done_ids = {
+        task.get("id")
+        for task in pre_cycle_data.get("tasks", [])
+        if task.get("status") == "done" and task.get("id")
+    }
+    completed = [
+        task
+        for task in post_cycle_data.get("tasks", [])
+        if task.get("status") == "done" and task.get("id") not in pre_cycle_done_ids
+    ]
+    completed.sort(key=lambda task: task.get("completed_at", ""))
+    return completed
 
 
 def run_afk(iterations: str) -> int:
@@ -60,6 +82,7 @@ def main() -> int:
         data = load_tasks()
 
         if has_executable_safe_task(data):
+            pre_cycle_data = data
             if max_cycles and launched_cycles >= max_cycles:
                 print("SUPERVISOR_STOPPED")
                 print("reason: reached configured cycle limit")
@@ -80,12 +103,14 @@ def main() -> int:
 
             post_cycle_data = load_tasks()
             cycle_outcome = "clean_idle" if is_clean_idle_blocked(post_cycle_data) else "progress"
+            completed_tasks = completed_tasks_during_cycle(pre_cycle_data, post_cycle_data)
             next_task = next_safe_task(post_cycle_data) if cycle_outcome == "progress" else None
             record_cycle_outcome(
                 cycle=launched_cycles,
                 episode_iterations=episode_iterations,
                 outcome=cycle_outcome,
                 afk_exit_status=status,
+                completed_tasks=completed_tasks,
                 next_task=next_task,
             )
 
