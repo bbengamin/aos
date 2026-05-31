@@ -12,6 +12,7 @@ from tasklib import (
     dependency_waiting_tasks,
     dependency_titles,
     format_age,
+    human_input_queue,
     is_clean_idle_blocked,
     is_long_blocked_task,
     is_stale_in_progress_task,
@@ -125,6 +126,7 @@ def main() -> int:
     print(
         f"QUEUE_HEALTH {queue_health(current=current, planned=planned, blockers=blockers, review_waiting=review_waiting, dependency_waiting=dependency_waiting)}"
     )
+    print(f"HUMAN_INPUT_QUEUE {human_input_queue(review_waiting=review_waiting, blockers=blockers)}")
     print(f"EXECUTABLE_SAFE_TASKS {executable_safe_task_count(data)}")
     print(f"ATTENTION_REQUIRED {attention}")
     print(

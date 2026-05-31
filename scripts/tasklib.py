@@ -336,6 +336,13 @@ def waiting_on(*, review_waiting: list[dict], blockers: list[dict], dependency_w
     return "none"
 
 
+def human_input_queue(*, review_waiting: list[dict], blockers: list[dict]) -> str:
+    review_count = len(review_waiting)
+    blocked_count = len(blockers)
+    total = review_count + blocked_count
+    return f"review={review_count} blocked={blocked_count} total={total}"
+
+
 def state_reason(
     *,
     current: dict | None,
