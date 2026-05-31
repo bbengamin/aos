@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T20:25:13Z",
+  "updated_at": "2026-05-31T20:28:44Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -1379,7 +1379,7 @@
       "id": "AUTO-54",
       "title": "Refine operator status summaries batch 14",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -1395,7 +1395,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T20:17:26Z"
+      "planned_at": "2026-05-31T20:17:26Z",
+      "started_at": "2026-05-31T20:25:27Z",
+      "completed_at": "2026-05-31T20:28:44Z",
+      "completion_summary": "added a top-level `WAITING_ON_TASK` signal to `./scripts/status`, backed it with shared `scripts/tasklib.py` logic, extended `./scripts/eval` coverage across active/blocked/dependency scenarios, and documented the new wait-target summary in `README.md`"
     }
   ]
 }

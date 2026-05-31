@@ -336,6 +336,18 @@ def waiting_on(*, review_waiting: list[dict], blockers: list[dict], dependency_w
     return "none"
 
 
+def waiting_on_task(
+    *, review_waiting: list[dict], blockers: list[dict], dependency_waiting: list[dict]
+) -> dict | None:
+    if review_waiting:
+        return review_waiting[0]
+    if blockers:
+        return blockers[0]
+    if dependency_waiting:
+        return dependency_waiting[0]
+    return None
+
+
 def human_input_queue(*, review_waiting: list[dict], blockers: list[dict]) -> str:
     review_count = len(review_waiting)
     blocked_count = len(blockers)

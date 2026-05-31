@@ -31,6 +31,7 @@ from tasklib import (
     task_is_dependency_blocked,
     unresolved_dependency_ids,
     waiting_on,
+    waiting_on_task,
 )
 
 
@@ -108,6 +109,11 @@ def main() -> int:
         review_waiting=review_waiting,
         blockers=blockers,
     )
+    waiting_on_task_item = waiting_on_task(
+        review_waiting=review_waiting,
+        blockers=blockers,
+        dependency_waiting=dependency_waiting,
+    )
 
     print(
         f"STATE {overall_state(current=current, planned=planned, blockers=blockers, dependency_waiting=dependency_waiting, clean_idle=clean_idle)}"
@@ -142,6 +148,10 @@ def main() -> int:
     print(
         f"WAITING_ON {waiting_on(review_waiting=review_waiting, blockers=blockers, dependency_waiting=dependency_waiting)}"
     )
+    if waiting_on_task_item:
+        print(f"WAITING_ON_TASK {waiting_on_task_item['id']}: {waiting_on_task_item['title']}")
+    else:
+        print("WAITING_ON_TASK none")
     if attention_task_item:
         print(f"ATTENTION_TASK {attention_task_item['id']}: {attention_task_item['title']}")
     else:
