@@ -1337,6 +1337,8 @@ def check_planner_candidate_audit_command() -> list[str]:
             "  covering_task_status: pending",
             "BLOCKED Add supervisor cycle outcome summaries",
             "  reason: planner_gate_has_executable_safe_tasks",
+            "  planner_gate_task_ids: AUTO-4",
+            "  planner_gate_task_titles: Add planner backlog breadth limits",
             "BLOCKED Add task dependency metadata for planned work",
             "  reason: waiting_on_done_titles",
             "  missing_required_titles: Add planner backlog breadth limits",

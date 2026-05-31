@@ -6,6 +6,7 @@ from plannerlib import (
     audit_planner_candidates,
     planner_batch_consumer_ids,
     planner_batch_consumers,
+    planner_gate_tasks,
     planner_max_auto_tasks,
 )
 from tasklib import load_tasks, pending_safe_tasks
@@ -53,6 +54,14 @@ def print_candidate(candidate: dict) -> None:
     if planner_batch_task_themes:
         print(f"  planner_batch_task_themes: {', '.join(planner_batch_task_themes)}")
 
+    planner_gate_task_ids = candidate.get("planner_gate_task_ids", [])
+    if planner_gate_task_ids:
+        print(f"  planner_gate_task_ids: {', '.join(planner_gate_task_ids)}")
+
+    planner_gate_task_titles = candidate.get("planner_gate_task_titles", [])
+    if planner_gate_task_titles:
+        print(f"  planner_gate_task_titles: {', '.join(planner_gate_task_titles)}")
+
     if candidate.get("covering_task_id"):
         print(f"  covering_task_id: {candidate['covering_task_id']}")
 
@@ -64,7 +73,7 @@ def main() -> int:
     data = load_tasks()
     candidates = audit_planner_candidates(data, max_auto_tasks=planner_max_auto_tasks())
     batch_consumers = planner_batch_consumers(candidates)
-    pending = pending_safe_tasks(data)
+    pending = planner_gate_tasks(data)
 
     if batch_consumers:
         batch_titles = [candidate["title"] for candidate in batch_consumers]

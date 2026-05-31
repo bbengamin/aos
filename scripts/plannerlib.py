@@ -283,13 +283,20 @@ def open_theme_counts(data: dict) -> dict[str, int]:
     return {theme: len(tasks) for theme, tasks in open_theme_tasks(data).items()}
 
 
+def planner_gate_tasks(data: dict) -> list[dict]:
+    return pending_safe_tasks(data)
+
+
 def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -> list[dict]:
     existing_auto = [task for task in data.get("tasks", []) if task.get("id", "").startswith("AUTO-")]
     theme_tasks = open_theme_tasks(data)
     theme_counts = {theme: len(tasks) for theme, tasks in theme_tasks.items()}
     planned_count = 0
     budget_exhausted = max_auto_tasks is not None and len(existing_auto) >= max_auto_tasks
-    planner_gate_blocked = bool(pending_safe_tasks(data))
+    gate_tasks = planner_gate_tasks(data)
+    planner_gate_blocked = bool(gate_tasks)
+    gate_task_ids = [task.get("id") for task in gate_tasks if task.get("id")]
+    gate_task_titles = [task.get("title") for task in gate_tasks if task.get("title")]
     candidates = []
 
     for template in all_planner_templates(data):
@@ -336,6 +343,8 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
             elif planner_gate_blocked:
                 candidate["status"] = "blocked"
                 candidate["reason"] = "planner_gate_has_executable_safe_tasks"
+                candidate["planner_gate_task_ids"] = gate_task_ids
+                candidate["planner_gate_task_titles"] = gate_task_titles
             else:
                 candidate["status"] = "eligible"
                 candidate["reason"] = "would_be_planned_now"
