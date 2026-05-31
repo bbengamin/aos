@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 
 from tasklib import add_task, append_execution_event, load_tasks, next_auto_task_id, pending_safe_tasks, save_tasks, utc_now
@@ -30,7 +31,63 @@ SAFE_TASK_TEMPLATES = [
         "notes": "Helps humans quickly understand whether the system is waiting or working.",
         "planning_reason": "Once planning and supervision exist, humans need a single status view that explains whether the system is actively working, waiting on a blocker, or cleanly idle.",
     },
+    {
+        "title": "Add supervisor cycle outcome summaries",
+        "priority": "medium",
+        "kind": "improvement",
+        "done_condition": "The supervisor records a short structured outcome for each AFK cycle so humans can inspect whether each relaunch ended in progress, clean idle, or failure.",
+        "notes": "Makes unattended relaunch behavior easier to audit after longer runs.",
+        "planning_reason": "Now that a supervisor exists, humans need a durable summary of what each AFK cycle actually did instead of only the raw log stream.",
+        "requires_done_titles": ["Add supervisor daemon for repeated AFK episodes"],
+    },
+    {
+        "title": "Add planner backlog breadth limits",
+        "priority": "medium",
+        "kind": "improvement",
+        "done_condition": "The planner can rotate through multiple safe improvement themes without re-adding covered work or flooding the queue with one theme.",
+        "notes": "Keeps self-generated backlog growth controlled and easier to review.",
+        "planning_reason": "Once the planner can keep generating work, it needs a simple breadth control so the queue stays varied and inspectable instead of repetitive.",
+        "requires_done_titles": ["Add planner-generated task reporting"],
+    },
+    {
+        "title": "Add stale-work status indicators",
+        "priority": "medium",
+        "kind": "improvement",
+        "done_condition": "Status output highlights stale in-progress or long-blocked tasks so humans can spot neglected work quickly.",
+        "notes": "Improves human supervision once the backlog and history get larger.",
+        "planning_reason": "After richer status reporting exists, the next safe improvement is to surface neglected work so humans can intervene earlier.",
+        "requires_done_titles": ["Add idle-state status summary command"],
+    },
+    {
+        "title": "Add task dependency metadata for planned work",
+        "priority": "medium",
+        "kind": "improvement",
+        "done_condition": "Planned tasks can carry lightweight dependency hints so the selector and humans can see why some work should wait.",
+        "notes": "Adds more structure to a growing self-generated backlog without introducing a heavy workflow engine.",
+        "planning_reason": "As the planner generates more follow-up work, lightweight dependency hints keep the backlog understandable and reduce accidental out-of-order execution.",
+        "requires_done_titles": ["Add planner backlog breadth limits"],
+    },
+    {
+        "title": "Add AFK log index command",
+        "priority": "low",
+        "kind": "improvement",
+        "done_condition": "A command can list recent AFK log files with timestamps and outcomes so humans can inspect unattended runs quickly.",
+        "notes": "Improves inspectability of longer unattended sessions.",
+        "planning_reason": "Once unattended runs accumulate, humans need a fast index over AFK logs instead of opening individual files manually.",
+        "requires_done_titles": ["Add supervisor cycle outcome summaries"],
+    },
+    {
+        "title": "Add planner candidate audit command",
+        "priority": "low",
+        "kind": "improvement",
+        "done_condition": "A command can show which planner candidates are covered, eligible, or blocked so humans can understand why the planner chose or skipped work.",
+        "notes": "Makes planner behavior more explainable without adding external dependencies.",
+        "planning_reason": "As the planner catalog becomes broader, humans need a direct way to inspect why candidate tasks are eligible, skipped, or already covered.",
+        "requires_done_titles": ["Add planner backlog breadth limits", "Add stale-work status indicators"],
+    },
 ]
+
+PLANNER_BATCH_SIZE = 3
 
 
 def template_already_covered(data: dict, template: dict) -> bool:
@@ -44,10 +101,24 @@ def template_already_covered(data: dict, template: dict) -> bool:
     return False
 
 
+def title_is_done(data: dict, title: str) -> bool:
+    for task in data.get("tasks", []):
+        if task.get("title") == title and task.get("status") == "done":
+            return True
+    return False
+
+
+def template_is_eligible(data: dict, template: dict) -> bool:
+    for required_title in template.get("requires_done_titles", []):
+        if not title_is_done(data, required_title):
+            return False
+    return True
+
+
 def main() -> int:
     data = load_tasks()
     max_auto_tasks = None
-    raw_limit = __import__("os").environ.get("AOS_MAX_AUTO_TASKS")
+    raw_limit = os.environ.get("AOS_MAX_AUTO_TASKS")
     if raw_limit and raw_limit.isdigit():
         max_auto_tasks = int(raw_limit)
 
@@ -67,6 +138,10 @@ def main() -> int:
     timestamp = utc_now()
 
     for template in SAFE_TASK_TEMPLATES:
+        if len(planned) >= PLANNER_BATCH_SIZE:
+            break
+        if not template_is_eligible(data, template):
+            continue
         if template_already_covered(data, template):
             continue
         task_id = next_auto_task_id(data)
@@ -88,7 +163,7 @@ def main() -> int:
 
     if not planned:
         print("PLANNING_SKIPPED")
-        print("reason: all safe planner templates are already covered")
+        print("reason: all eligible safe planner candidates are already covered")
         return 0
 
     save_tasks(data)

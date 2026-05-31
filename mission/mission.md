@@ -1,6 +1,6 @@
 # Mission
 
-Build the smallest possible mission-centered self-building Agentic OS.
+Build the mission-centered self-building Agentic OS.
 
 ## Goal
 

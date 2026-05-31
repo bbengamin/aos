@@ -6,11 +6,31 @@ import sys
 import time
 from pathlib import Path
 
-from tasklib import has_executable_safe_task, is_clean_idle_blocked, load_tasks
+from tasklib import append_execution_event, has_executable_safe_task, is_clean_idle_blocked, load_tasks, utc_now
 
 
 ROOT = Path(__file__).resolve().parent.parent
 AFK = ROOT / "scripts" / "afk"
+
+
+def record_cycle_outcome(*, cycle: int, episode_iterations: str, outcome: str, afk_exit_status: int | None = None) -> None:
+    event = {
+        "timestamp": utc_now(),
+        "event": "supervisor_cycle_summary",
+        "cycle": cycle,
+        "episode_iterations": str(episode_iterations),
+        "outcome": outcome,
+    }
+    if afk_exit_status is not None:
+        event["afk_exit_status"] = afk_exit_status
+    append_execution_event(event)
+
+    if afk_exit_status is None:
+        print(f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome}")
+    else:
+        print(
+            f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome} afk_exit_status={afk_exit_status}"
+        )
 
 
 def run_afk(iterations: str) -> int:
@@ -37,8 +57,28 @@ def main() -> int:
             print(f"SUPERVISOR_LAUNCH cycle={launched_cycles} episode_iterations={episode_iterations}")
             status = run_afk(episode_iterations)
             if status != 0:
+                record_cycle_outcome(
+                    cycle=launched_cycles,
+                    episode_iterations=episode_iterations,
+                    outcome="failure",
+                    afk_exit_status=status,
+                )
                 print(f"SUPERVISOR_FAILED afk_exit_status={status}")
                 return status
+
+            post_cycle_data = load_tasks()
+            cycle_outcome = "clean_idle" if is_clean_idle_blocked(post_cycle_data) else "progress"
+            record_cycle_outcome(
+                cycle=launched_cycles,
+                episode_iterations=episode_iterations,
+                outcome=cycle_outcome,
+                afk_exit_status=status,
+            )
+
+            if max_cycles and launched_cycles >= max_cycles:
+                print("SUPERVISOR_STOPPED")
+                print("reason: reached configured cycle limit")
+                return 0
             continue
 
         if is_clean_idle_blocked(data):

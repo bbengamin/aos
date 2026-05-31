@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T14:21:07Z",
+  "updated_at": "2026-05-31T15:02:43Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -242,6 +242,48 @@
       "started_at": "2026-05-31T14:18:37Z",
       "completed_at": "2026-05-31T14:21:07Z",
       "completion_summary": "Fixed the status-state model so `clean_idle_blocked` only applies when blocked tasks are the only pending work, added eval coverage for the distinct `STATE blocked` case, and documented that blocked-vs-clean-idle-blocked behavior in `README.md`."
+    },
+    {
+      "id": "AUTO-7",
+      "title": "Add supervisor cycle outcome summaries",
+      "status": "done",
+      "priority": "medium",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "The supervisor records a short structured outcome for each AFK cycle so humans can inspect whether each relaunch ended in progress, clean idle, or failure.",
+      "notes": "Makes unattended relaunch behavior easier to audit after longer runs.",
+      "planning_reason": "Now that a supervisor exists, humans need a durable summary of what each AFK cycle actually did instead of only the raw log stream.",
+      "planned_at": "2026-05-31T14:58:42Z",
+      "started_at": "2026-05-31T14:59:29Z",
+      "completed_at": "2026-05-31T15:02:43Z",
+      "completion_summary": "added durable `supervisor_cycle_summary` logging and console summaries for each AFK supervisor cycle, documented the new behavior, fixed cycle-limit exit after a completed cycle, and extended `./scripts/eval` with integration coverage for clean-idle supervisor outcomes"
+    },
+    {
+      "id": "AUTO-8",
+      "title": "Add planner backlog breadth limits",
+      "status": "pending",
+      "priority": "medium",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "The planner can rotate through multiple safe improvement themes without re-adding covered work or flooding the queue with one theme.",
+      "notes": "Keeps self-generated backlog growth controlled and easier to review.",
+      "planning_reason": "Once the planner can keep generating work, it needs a simple breadth control so the queue stays varied and inspectable instead of repetitive.",
+      "planned_at": "2026-05-31T14:58:42Z"
+    },
+    {
+      "id": "AUTO-9",
+      "title": "Add stale-work status indicators",
+      "status": "pending",
+      "priority": "medium",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "Status output highlights stale in-progress or long-blocked tasks so humans can spot neglected work quickly.",
+      "notes": "Improves human supervision once the backlog and history get larger.",
+      "planning_reason": "After richer status reporting exists, the next safe improvement is to surface neglected work so humans can intervene earlier.",
+      "planned_at": "2026-05-31T14:58:42Z"
     }
   ]
 }
