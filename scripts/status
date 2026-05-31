@@ -60,6 +60,18 @@ def overall_state(*, current: dict | None, planned: list[dict], blockers: list[d
     return "idle"
 
 
+def attention_required(*, current: dict | None, review_waiting: list[dict], blockers: list[dict]) -> str:
+    if review_waiting:
+        return "review"
+    if current and is_stale_in_progress_task(current):
+        return "stale"
+    if any(is_long_blocked_task(task) for task in blockers):
+        return "stale"
+    if blockers:
+        return "unblock"
+    return "none"
+
+
 def main() -> int:
     data = load_tasks()
 
@@ -85,6 +97,7 @@ def main() -> int:
     print(
         f"STATE {overall_state(current=current, planned=planned, blockers=blockers, dependency_waiting=dependency_waiting, clean_idle=clean_idle)}"
     )
+    print(f"ATTENTION_REQUIRED {attention_required(current=current, review_waiting=review_waiting, blockers=blockers)}")
     print(f"CLEAN_IDLE_BLOCKED {'yes' if clean_idle else 'no'}")
 
     if current:

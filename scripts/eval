@@ -226,6 +226,8 @@ def check_blocker_model() -> list[str]:
         return ["status script output did not include blocker summary"]
     if "BLOCKED " not in result.stdout:
         return ["status script output did not list blocked tasks separately"]
+    if "ATTENTION_REQUIRED " not in result.stdout:
+        return ["status script output did not include an attention-required summary"]
     return []
 
 
@@ -261,7 +263,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE active", "CLEAN_IDLE_BLOCKED no", "CURRENT ACTIVE-1", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0"],
+                ["STATE active", "ATTENTION_REQUIRED none", "CLEAN_IDLE_BLOCKED no", "CURRENT ACTIVE-1", "PLANNED_WORK 0", "BLOCKERS 0", "REVIEW_WAITING 0"],
             ),
             (
                 "planned",
@@ -282,7 +284,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE planned", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT AUTO-1", "PLANNED_WORK 1", "PLANNED AUTO-1", "BLOCKERS 0", "REVIEW_WAITING 0"],
+                ["STATE planned", "ATTENTION_REQUIRED none", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT AUTO-1", "PLANNED_WORK 1", "PLANNED AUTO-1", "BLOCKERS 0", "REVIEW_WAITING 0"],
             ),
             (
                 "clean_idle_blocked",
@@ -304,7 +306,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE clean_idle_blocked", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 0"],
+                ["STATE clean_idle_blocked", "ATTENTION_REQUIRED unblock", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 0"],
             ),
             (
                 "blocked",
@@ -336,7 +338,7 @@ def check_status_summary_modes() -> list[str]:
                         }
                     ],
                 },
-                ["STATE blocked", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 1", "REVIEW REVIEW-1"],
+                ["STATE blocked", "ATTENTION_REQUIRED review", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1", "REVIEW_WAITING 1", "REVIEW REVIEW-1"],
             ),
         ]
 
@@ -492,6 +494,7 @@ def check_status_stale_work_indicators() -> list[str]:
 
         failures = []
         for expected in [
+            "ATTENTION_REQUIRED stale",
             "STALE_IN_PROGRESS 1",
             "STALE CURRENT ACTIVE-STALE-1: Old in-progress task",
             "LONG_BLOCKED 1",
@@ -728,6 +731,7 @@ def check_dependency_aware_selection() -> list[str]:
         failures = []
         for expected in [
             "STATE planned",
+            "ATTENTION_REQUIRED none",
             "NEXT READY-1: Task with resolved dependency",
             "DEPENDENCY_WAITING 1",
             "WAITING WAIT-1: Task waiting on unresolved dependency",

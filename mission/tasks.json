@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T15:48:49Z",
+  "updated_at": "2026-05-31T15:52:02Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -479,7 +479,7 @@
       "id": "AUTO-18",
       "title": "Refine operator status summaries batch 2",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -495,7 +495,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T15:43:56Z"
+      "planned_at": "2026-05-31T15:43:56Z",
+      "started_at": "2026-05-31T15:49:00Z",
+      "completed_at": "2026-05-31T15:52:02Z",
+      "completion_summary": "added a top-level `ATTENTION_REQUIRED` signal to `scripts/status` so operators can immediately see whether human review, unblocking, or stale-work intervention is needed, documented the new status summary in `README.md`, and extended `./scripts/eval` to verify the signal across status scenarios and stale-work coverage."
     }
   ]
 }
