@@ -222,6 +222,8 @@ def check_planning_loop() -> list[str]:
         failures.append("plan-next must define safe task templates")
     if "planned_next_tasks" not in planner_text:
         failures.append("plan-next must log planned_next_tasks events")
+    if "planning_reason" not in planner_text:
+        failures.append("plan-next must record planning_reason for generated tasks")
     if "PLAN_NEXT" not in episode_text:
         failures.append("episode must wire in plan-next")
     if "PLANNING_COMPLETED" not in episode_text:
@@ -305,10 +307,15 @@ def check_plan_next_generates_tasks() -> list[str]:
         planned = [task for task in updated_tasks.get("tasks", []) if task.get("id", "").startswith("AUTO-")]
         if not planned:
             return ["plan-next did not create any AUTO-* tasks when no executable safe work existed"]
+        if not all(task.get("planning_reason") for task in planned):
+            return ["plan-next did not record planning_reason on every generated AUTO-* task"]
 
         events = [json.loads(line) for line in execution_log_path.read_text().splitlines() if line.strip()]
-        if not any(event.get("event") == "planned_next_tasks" for event in events):
+        planning_events = [event for event in events if event.get("event") == "planned_next_tasks"]
+        if not planning_events:
             return ["plan-next did not log planned_next_tasks in the execution log"]
+        if not planning_events[-1].get("planning_reasons"):
+            return ["plan-next did not log planning_reasons in the execution log"]
 
     return []
 

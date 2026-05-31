@@ -12,6 +12,7 @@ SAFE_TASK_TEMPLATES = [
         "kind": "improvement",
         "done_condition": "A local daemon script can launch bounded AFK episodes repeatedly, sleep in clean idle-blocked state, and resume when executable work appears.",
         "notes": "This turns episodic AFK runs into a persistent local operating loop without adding secrets or private integrations.",
+        "planning_reason": "The loop can already plan and execute bounded episodes, but it still needs a persistent local operator that keeps relaunching those episodes while preserving review gates.",
     },
     {
         "title": "Add planner-generated task reporting",
@@ -19,6 +20,7 @@ SAFE_TASK_TEMPLATES = [
         "kind": "improvement",
         "done_condition": "The system records when and why new tasks were generated so humans can review planning decisions after AFK runs.",
         "notes": "Makes the new planning step inspectable and easier to trust.",
+        "planning_reason": "The planner currently creates new work with only titles and done conditions, so humans need explicit rationale to audit why each new task entered the queue.",
     },
     {
         "title": "Add idle-state status summary command",
@@ -26,6 +28,7 @@ SAFE_TASK_TEMPLATES = [
         "kind": "improvement",
         "done_condition": "A status summary can distinguish active work, planned work, blocked work, and clean idle-blocked state in one command.",
         "notes": "Helps humans quickly understand whether the system is waiting or working.",
+        "planning_reason": "Once planning and supervision exist, humans need a single status view that explains whether the system is actively working, waiting on a blocker, or cleanly idle.",
     },
 ]
 
@@ -64,6 +67,7 @@ def main() -> int:
             "requires_human_review": False,
             "done_condition": template["done_condition"],
             "notes": template["notes"],
+            "planning_reason": template["planning_reason"],
             "planned_at": timestamp,
         }
         add_task(data, task)
@@ -77,6 +81,7 @@ def main() -> int:
             "event": "planned_next_tasks",
             "task_ids": [task["id"] for task in planned],
             "titles": [task["title"] for task in planned],
+            "planning_reasons": [task["planning_reason"] for task in planned],
         }
     )
 
@@ -84,6 +89,7 @@ def main() -> int:
     for task in planned:
         print(f"planned_task_id: {task['id']}")
         print(f"title: {task['title']}")
+        print(f"planning_reason: {task['planning_reason']}")
         print(f"done_condition: {task['done_condition']}")
     return 0
 

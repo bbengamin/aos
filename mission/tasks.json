@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T14:10:04Z",
+  "updated_at": "2026-05-31T14:11:53Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -168,14 +168,17 @@
     {
       "id": "AUTO-2",
       "title": "Add planner-generated task reporting",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
       "requires_human_review": false,
       "done_condition": "The system records when and why new tasks were generated so humans can review planning decisions after AFK runs.",
       "notes": "Makes the new planning step inspectable and easier to trust.",
-      "planned_at": "2026-05-31T14:04:02Z"
+      "planned_at": "2026-05-31T14:04:02Z",
+      "started_at": "2026-05-31T14:10:08Z",
+      "completed_at": "2026-05-31T14:11:53Z",
+      "completion_summary": "Added explicit planner rationale reporting by storing `planning_reason` on generated AUTO tasks, logging `planning_reasons` in `planned_next_tasks`, surfacing the rationale in `scripts/status` and README, and extending `scripts/eval` to require and integration-test that planning evidence."
     },
     {
       "id": "AUTO-3",

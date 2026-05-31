@@ -9,6 +9,8 @@ def print_task(prefix: str, task: dict) -> None:
     print(f"{prefix}{task['id']}: {task['title']}")
     print(f"  status: {task['status']}")
     print(f"  done_condition: {task['done_condition']}")
+    if task.get("planning_reason"):
+        print(f"  planning_reason: {task['planning_reason']}")
     if task.get("blocker_reason"):
         print(f"  blocker_reason: {task['blocker_reason']}")
     if task.get("unblock_resolution"):

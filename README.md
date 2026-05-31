@@ -76,7 +76,7 @@ For an unattended bounded run:
 ```
 
 It writes a timestamped log under `logs/` and returns a non-zero exit code only for real failures.
-Inside `episode`, the system now follows a fuller loop: if no executable safe task exists, it runs `./scripts/plan-next`, then continues with act/review/update. The agent must emit either `COMPLETION_SUMMARY: ...` for completed work or `BLOCKED_BY_HUMAN: ...` when human input is needed.
+Inside `episode`, the system now follows a fuller loop: if no executable safe task exists, it runs `./scripts/plan-next`, then continues with act/review/update. Planner-created tasks now carry a `planning_reason` in both `mission/tasks.json` and the `planned_next_tasks` execution-log event so humans can inspect why the backlog changed. The agent must emit either `COMPLETION_SUMMARY: ...` for completed work or `BLOCKED_BY_HUMAN: ...` when human input is needed.
 
 To see where human action is needed:
 
