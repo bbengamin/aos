@@ -368,6 +368,49 @@ def state_reason(
     return "no_pending_work"
 
 
+def status_posture(
+    *,
+    current: dict | None,
+    planned: list[dict],
+    blockers: list[dict],
+    review_waiting: list[dict],
+    dependency_waiting: list[dict],
+    attention: str,
+    clean_idle: bool,
+) -> str:
+    if current:
+        if attention == "stale":
+            return "stale_active"
+        waits = []
+        if review_waiting:
+            waits.append("review")
+        if blockers:
+            waits.append("blocked")
+        if dependency_waiting:
+            waits.append("dependencies")
+        if waits:
+            return f"active_with_{'_and_'.join(waits)}"
+        return "active_only"
+
+    if attention == "stale":
+        return "stale_blocked"
+    if clean_idle:
+        return "clean_idle_blocked"
+    if review_waiting:
+        return "review_waiting"
+    if blockers and (planned or dependency_waiting):
+        return "blocked_with_ready_work"
+    if blockers:
+        return "blocked_waiting_for_human"
+    if planned and dependency_waiting:
+        return "ready_and_waiting_on_dependencies"
+    if planned:
+        return "ready_safe_backlog"
+    if dependency_waiting:
+        return "dependency_waiting"
+    return "idle"
+
+
 def pending_safe_tasks(data: dict) -> list[dict]:
     return [
         task

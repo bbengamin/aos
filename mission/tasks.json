@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T20:10:41Z",
+  "updated_at": "2026-05-31T20:17:10Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -1304,7 +1304,7 @@
       "id": "AUTO-51",
       "title": "Refine operator status summaries batch 13",
       "theme": "status",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -1320,7 +1320,10 @@
       "dependency_titles": [
         "Add stale-work status indicators"
       ],
-      "planned_at": "2026-05-31T20:04:28Z"
+      "planned_at": "2026-05-31T20:04:28Z",
+      "started_at": "2026-05-31T20:10:55Z",
+      "completed_at": "2026-05-31T20:17:10Z",
+      "completion_summary": "added a top-level `STATUS_POSTURE` signal to `./scripts/status`, backed it with shared `scripts/tasklib.py` logic, extended `./scripts/eval` coverage for active/planned/blocked/dependency/stale scenarios, and documented the new status summary in `README.md`"
     }
   ]
 }

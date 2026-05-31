@@ -27,6 +27,7 @@ from tasklib import (
     queue_health,
     review_waiting_tasks,
     state_reason,
+    status_posture,
     task_is_dependency_blocked,
     unresolved_dependency_ids,
     waiting_on,
@@ -113,6 +114,9 @@ def main() -> int:
     )
     print(
         f"STATE_REASON {state_reason(current=current, next_task=next_task, blockers=blockers, review_waiting=review_waiting, dependency_waiting=dependency_waiting, clean_idle=clean_idle, attention=attention)}"
+    )
+    print(
+        f"STATUS_POSTURE {status_posture(current=current, planned=planned, blockers=blockers, review_waiting=review_waiting, dependency_waiting=dependency_waiting, attention=attention, clean_idle=clean_idle)}"
     )
     print(
         work_inventory(

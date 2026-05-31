@@ -46,7 +46,7 @@ It is intentionally file-first:
 - `./scripts/afk`: runs `episode` with timestamped logging for unattended sessions
 - `./scripts/afk-log-index`: lists recent `logs/afk-*.log` files with parsed timestamps, last-task context, and best-effort outcomes
 - `./scripts/supervisor`: relaunches bounded AFK episodes, sleeps while work is cleanly idle-blocked, resumes when executable work appears, and records a structured summary for each AFK cycle
-- `./scripts/status`: summarizes whether the system is active, planned, blocked, or cleanly idle-blocked, explains that top-level state with `STATE_REASON`, shows top-level `WORK_INVENTORY`, `QUEUE_HEALTH`, and `HUMAN_INPUT_QUEUE` summaries, an `ATTENTION_REQUIRED` signal, a concrete `NEXT_ACTION`, a combined `NEXT_STEP` action-plus-target hint, a top-level `WAITING_ON` cause, the specific `ATTENTION_TASK`, current work, planned work, human blockers, review-gated work, dependency-waiting work, and flags stale work
+- `./scripts/status`: summarizes whether the system is active, planned, blocked, or cleanly idle-blocked, explains that top-level state with `STATE_REASON`, adds a compact `STATUS_POSTURE` signal for mixed active-vs-waiting conditions, shows top-level `WORK_INVENTORY`, `QUEUE_HEALTH`, and `HUMAN_INPUT_QUEUE` summaries, an `ATTENTION_REQUIRED` signal, a concrete `NEXT_ACTION`, a combined `NEXT_STEP` action-plus-target hint, a top-level `WAITING_ON` cause, the specific `ATTENTION_TASK`, current work, planned work, human blockers, review-gated work, dependency-waiting work, and flags stale work
 - `./scripts/block-task`: mark a task blocked with a human reason
 - `./scripts/unblock-task`: clear a blocker with a human resolution note
 - `./scripts/plan-next`: generate the next 1-3 safe tasks when the executable queue is empty
@@ -105,6 +105,8 @@ The place to look for blockers is `mission/tasks.json`, and the quickest human-r
 `HUMAN_INPUT_QUEUE` is the matching human-wait summary. It reports `review=<n> blocked=<n> total=<n>` so humans can quickly see how much pending work is paused on review gates versus unblock decisions.
 
 `EXECUTABLE_SAFE_TASKS` is the matching readiness count. It reports how many safe tasks are runnable right now, so humans can distinguish between a large total backlog and the smaller subset the loop can actually act on immediately.
+
+`STATUS_POSTURE` is the compact mixed-condition summary on that same status view. It reports whether the repo is simply `active_only` or in a more nuanced posture like `active_with_review_and_blocked`, `blocked_with_ready_work`, `ready_and_waiting_on_dependencies`, `stale_active`, or `clean_idle_blocked`, which helps humans interpret queue shape without reading every detailed section first.
 
 To inspect the full planner catalog and see why each candidate would be chosen or skipped:
 
