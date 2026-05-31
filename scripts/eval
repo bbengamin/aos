@@ -194,11 +194,119 @@ def check_blocker_model() -> list[str]:
     )
     if result.returncode != 0:
         return [f"status script failed: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+    if "STATE " not in result.stdout:
+        return ["status script output did not include an overall state summary"]
+    if "CLEAN_IDLE_BLOCKED " not in result.stdout:
+        return ["status script output did not include a clean idle-blocked summary"]
+    if "PLANNED_WORK " not in result.stdout:
+        return ["status script output did not include planned work summary"]
     if "BLOCKERS" not in result.stdout:
         return ["status script output did not include blocker summary"]
     if "BLOCKED " not in result.stdout:
         return ["status script output did not list blocked tasks separately"]
     return []
+
+
+def check_status_summary_modes() -> list[str]:
+    if os.environ.get("AOS_SKIP_STATUS_SUMMARY_CHECK") == "1":
+        return []
+
+    failures = []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        status_path = tmp_root / "scripts" / "status"
+        status_path.chmod(status_path.stat().st_mode | stat.S_IXUSR)
+
+        scenarios = [
+            (
+                "active",
+                {
+                    "version": 1,
+                    "updated_at": "2026-05-31T00:00:00Z",
+                    "tasks": [
+                        {
+                            "id": "ACTIVE-1",
+                            "title": "Current active task",
+                            "status": "in_progress",
+                            "priority": "high",
+                            "kind": "improvement",
+                            "safe": True,
+                            "requires_human_review": False,
+                            "done_condition": "Continue active work.",
+                        }
+                    ],
+                },
+                ["STATE active", "CLEAN_IDLE_BLOCKED no", "CURRENT ACTIVE-1", "PLANNED_WORK 0", "BLOCKERS 0"],
+            ),
+            (
+                "planned",
+                {
+                    "version": 1,
+                    "updated_at": "2026-05-31T00:00:00Z",
+                    "tasks": [
+                        {
+                            "id": "AUTO-1",
+                            "title": "Planned follow-up",
+                            "status": "pending",
+                            "priority": "medium",
+                            "kind": "improvement",
+                            "safe": True,
+                            "requires_human_review": False,
+                            "done_condition": "Remain pending.",
+                            "planning_reason": "Planned by the local planner.",
+                        }
+                    ],
+                },
+                ["STATE planned", "CLEAN_IDLE_BLOCKED no", "CURRENT none", "NEXT AUTO-1", "PLANNED_WORK 1", "PLANNED AUTO-1", "BLOCKERS 0"],
+            ),
+            (
+                "clean_idle_blocked",
+                {
+                    "version": 1,
+                    "updated_at": "2026-05-31T00:00:00Z",
+                    "tasks": [
+                        {
+                            "id": "BLOCKED-1",
+                            "title": "Waiting on human unblock",
+                            "status": "pending",
+                            "priority": "medium",
+                            "kind": "risk",
+                            "safe": True,
+                            "requires_human_review": False,
+                            "blocked_by_human": True,
+                            "blocker_reason": "Need human input.",
+                            "done_condition": "Remain blocked.",
+                        }
+                    ],
+                },
+                ["STATE clean_idle_blocked", "CLEAN_IDLE_BLOCKED yes", "CURRENT none", "NEXT none", "PLANNED_WORK 0", "BLOCKERS 1", "BLOCKED BLOCKED-1"],
+            ),
+        ]
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+
+        for scenario_name, tasks_data, expected_bits in scenarios:
+            tasks_path.write_text(json.dumps(tasks_data, indent=2) + "\n")
+            result = subprocess.run(
+                [str(status_path)],
+                cwd=tmp_root,
+                capture_output=True,
+                text=True,
+                env={**os.environ, "AOS_SKIP_STATUS_SUMMARY_CHECK": "1"},
+            )
+            if result.returncode != 0:
+                failures.append(
+                    f"status script failed in {scenario_name} summary integration check: {result.stdout.strip()} {result.stderr.strip()}".strip()
+                )
+                continue
+            for expected in expected_bits:
+                if expected not in result.stdout:
+                    failures.append(f"status script did not report {expected!r} in the {scenario_name} summary integration check")
+
+    return failures
 
 
 def check_blocker_commands() -> list[str]:
@@ -677,6 +785,7 @@ def main() -> int:
     failures.extend(check_plan())
     failures.extend(check_review_gate())
     failures.extend(check_blocker_model())
+    failures.extend(check_status_summary_modes())
     failures.extend(check_blocker_commands())
     failures.extend(check_planning_loop())
     failures.extend(check_plan_next_generates_tasks())

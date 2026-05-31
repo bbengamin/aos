@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T14:11:53Z",
+  "updated_at": "2026-05-31T14:13:47Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -183,14 +183,17 @@
     {
       "id": "AUTO-3",
       "title": "Add idle-state status summary command",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
       "requires_human_review": false,
       "done_condition": "A status summary can distinguish active work, planned work, blocked work, and clean idle-blocked state in one command.",
       "notes": "Helps humans quickly understand whether the system is waiting or working.",
-      "planned_at": "2026-05-31T14:04:02Z"
+      "planned_at": "2026-05-31T14:04:02Z",
+      "started_at": "2026-05-31T14:11:57Z",
+      "completed_at": "2026-05-31T14:13:47Z",
+      "completion_summary": "Updated `scripts/status` to report a single overall state plus explicit clean-idle-blocked and planned-work summaries, added eval coverage for active/planned/clean-idle-blocked status modes, and documented the richer status view in `README.md`."
     }
   ]
 }

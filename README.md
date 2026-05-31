@@ -45,7 +45,7 @@ It is intentionally file-first:
 - `./scripts/episode`: runs a bounded Ralph-style improvement episode and closes the active task after a passing eval and explicit `COMPLETION_SUMMARY`
 - `./scripts/afk`: runs `episode` with timestamped logging for unattended sessions
 - `./scripts/supervisor`: relaunches bounded AFK episodes, sleeps while work is cleanly idle-blocked, and resumes when executable work appears
-- `./scripts/status`: shows the current task, next task, and human blockers
+- `./scripts/status`: summarizes whether the system is active, planned, blocked, or cleanly idle-blocked, and shows current work, planned work, and human blockers
 - `./scripts/block-task`: mark a task blocked with a human reason
 - `./scripts/unblock-task`: clear a blocker with a human resolution note
 - `./scripts/plan-next`: generate the next 1-3 safe tasks when the executable queue is empty
@@ -84,7 +84,7 @@ To see where human action is needed:
 ./scripts/status
 ```
 
-The place to look for blockers is `mission/tasks.json`, and the quickest human-readable view is `./scripts/status`.
+The place to look for blockers is `mission/tasks.json`, and the quickest human-readable view is `./scripts/status`. That command now reports a single overall `STATE`, whether the repo is in `CLEAN_IDLE_BLOCKED` mode, the current executable task, the planned safe backlog, and the blocked queue.
 
 To block one task and keep the loop working on others:
 

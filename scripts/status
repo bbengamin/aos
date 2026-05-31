@@ -2,7 +2,14 @@
 
 import sys
 
-from tasklib import blocked_tasks, current_in_progress_task, load_tasks, next_safe_task
+from tasklib import (
+    blocked_tasks,
+    current_in_progress_task,
+    is_clean_idle_blocked,
+    load_tasks,
+    next_safe_task,
+    pending_safe_tasks,
+)
 
 
 def print_task(prefix: str, task: dict) -> None:
@@ -17,12 +24,29 @@ def print_task(prefix: str, task: dict) -> None:
         print(f"  unblock_resolution: {task['unblock_resolution']}")
 
 
+def overall_state(*, current: dict | None, planned: list[dict], blockers: list[dict], clean_idle: bool) -> str:
+    if current:
+        return "active"
+    if clean_idle:
+        return "clean_idle_blocked"
+    if planned:
+        return "planned"
+    if blockers:
+        return "blocked"
+    return "idle"
+
+
 def main() -> int:
     data = load_tasks()
 
     current = current_in_progress_task(data)
     next_task = next_safe_task(data)
+    planned = pending_safe_tasks(data)
     blockers = blocked_tasks(data)
+    clean_idle = is_clean_idle_blocked(data)
+
+    print(f"STATE {overall_state(current=current, planned=planned, blockers=blockers, clean_idle=clean_idle)}")
+    print(f"CLEAN_IDLE_BLOCKED {'yes' if clean_idle else 'no'}")
 
     if current:
         print_task("CURRENT ", current)
@@ -33,6 +57,10 @@ def main() -> int:
         print_task("NEXT ", next_task)
     else:
         print("NEXT none")
+
+    print(f"PLANNED_WORK {len(planned)}")
+    for task in planned:
+        print_task("PLANNED ", task)
 
     if blockers:
         print(f"BLOCKERS {len(blockers)}")
