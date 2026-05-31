@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T19:56:55Z",
+  "updated_at": "2026-05-31T20:00:13Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -1204,7 +1204,7 @@
       "id": "AUTO-47",
       "title": "Refine planner backlog generation heuristics batch 12",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -1220,7 +1220,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T19:54:25Z"
+      "planned_at": "2026-05-31T19:54:25Z",
+      "started_at": "2026-05-31T19:57:08Z",
+      "completed_at": "2026-05-31T20:00:13Z",
+      "completion_summary": "added readable `dependency_task_refs` to `./scripts/planner-candidates` for resolved planner prerequisites and extended `./scripts/eval` coverage to verify the richer planner dependency explanations."
     },
     {
       "id": "AUTO-48",

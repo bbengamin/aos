@@ -256,6 +256,15 @@ def resolved_dependency_ids(data: dict, template: dict) -> list[str]:
     return dependency_ids
 
 
+def resolved_dependency_task_refs(data: dict, template: dict) -> list[str]:
+    dependency_refs = []
+    for required_title in template.get("requires_done_titles", []):
+        dependency_id = task_id_for_done_title(data, required_title)
+        if dependency_id:
+            dependency_refs.append(f"{dependency_id}: {required_title}")
+    return dependency_refs
+
+
 def missing_required_task_states(data: dict, template: dict) -> list[str]:
     task_states = []
     for required_title in template.get("requires_done_titles", []):
@@ -322,6 +331,7 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
             "planning_reason": template["planning_reason"],
             "dependency_titles": template.get("requires_done_titles", []),
             "dependency_ids": resolved_dependency_ids(data, template),
+            "dependency_task_refs": resolved_dependency_task_refs(data, template),
             "generator_key": template.get("generator_key"),
             "follow_up_batch": template.get("follow_up_batch"),
         }
