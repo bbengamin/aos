@@ -309,6 +309,73 @@ def check_status_summary_modes() -> list[str]:
     return failures
 
 
+def check_status_last_plan_summary() -> list[str]:
+    if os.environ.get("AOS_SKIP_STATUS_SUMMARY_CHECK") == "1":
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+        tasks_path.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "updated_at": "2026-05-31T00:00:00Z",
+                    "tasks": [
+                        {
+                            "id": "DONE-1",
+                            "title": "Finished planned task",
+                            "status": "done",
+                            "priority": "medium",
+                            "kind": "improvement",
+                            "safe": True,
+                            "requires_human_review": False,
+                            "done_condition": "Remain done.",
+                            "completed_at": "2026-05-31T00:00:00Z",
+                            "completion_summary": "Already finished.",
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+
+        execution_log_path = tmp_root / "mission" / "execution-log.ndjson"
+        execution_log_path.write_text(
+            json.dumps(
+                {
+                    "timestamp": "2026-05-31T00:00:00Z",
+                    "event": "planned_next_tasks",
+                    "task_ids": ["AUTO-9"],
+                    "titles": ["Add planner-generated task reporting"],
+                    "planning_reasons": ["Humans need a durable planner rationale summary after AFK runs."],
+                }
+            )
+            + "\n"
+        )
+
+        result = subprocess.run(
+            [str(tmp_root / "scripts" / "status")],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "AOS_SKIP_STATUS_SUMMARY_CHECK": "1"},
+        )
+        if result.returncode != 0:
+            return [f"status script failed in latest-plan integration check: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+        if "LAST_PLAN 2026-05-31T00:00:00Z" not in result.stdout:
+            return ["status script did not show the latest planning event timestamp"]
+        if "LAST_PLANNED AUTO-9: Add planner-generated task reporting" not in result.stdout:
+            return ["status script did not show the latest planned task summary"]
+        if "planning_reason: Humans need a durable planner rationale summary after AFK runs." not in result.stdout:
+            return ["status script did not show the latest planning reason summary"]
+
+    return []
+
+
 def check_blocker_commands() -> list[str]:
     block_text = (ROOT / "scripts" / "block-task").read_text()
     unblock_text = (ROOT / "scripts" / "unblock-task").read_text()
@@ -887,6 +954,7 @@ def main() -> int:
     failures.extend(check_review_gate())
     failures.extend(check_blocker_model())
     failures.extend(check_status_summary_modes())
+    failures.extend(check_status_last_plan_summary())
     failures.extend(check_blocker_commands())
     failures.extend(check_planning_loop())
     failures.extend(check_plan_next_generates_tasks())

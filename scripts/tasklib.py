@@ -22,6 +22,12 @@ def load_tasks() -> dict:
     return json.loads(TASKS_PATH.read_text())
 
 
+def load_execution_events() -> list[dict]:
+    if not EXECUTION_LOG_PATH.exists():
+        return []
+    return [json.loads(line) for line in EXECUTION_LOG_PATH.read_text().splitlines() if line.strip()]
+
+
 def save_tasks(data: dict) -> None:
     data["updated_at"] = utc_now()
     TASKS_PATH.write_text(json.dumps(data, indent=2) + "\n")
@@ -92,6 +98,13 @@ def pending_safe_tasks(data: dict) -> list[dict]:
         and not task.get("requires_human_review", False)
         and not task.get("blocked_by_human", False)
     ]
+
+
+def latest_planning_event() -> dict | None:
+    for event in reversed(load_execution_events()):
+        if event.get("event") == "planned_next_tasks":
+            return event
+    return None
 
 
 def next_auto_task_id(data: dict) -> str:

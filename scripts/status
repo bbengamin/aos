@@ -6,6 +6,7 @@ from tasklib import (
     blocked_tasks,
     current_in_progress_task,
     is_clean_idle_blocked,
+    latest_planning_event,
     load_tasks,
     next_safe_task,
     pending_safe_tasks,
@@ -44,6 +45,7 @@ def main() -> int:
     planned = pending_safe_tasks(data)
     blockers = blocked_tasks(data)
     clean_idle = is_clean_idle_blocked(data)
+    last_plan = latest_planning_event()
 
     print(f"STATE {overall_state(current=current, planned=planned, blockers=blockers, clean_idle=clean_idle)}")
     print(f"CLEAN_IDLE_BLOCKED {'yes' if clean_idle else 'no'}")
@@ -61,6 +63,18 @@ def main() -> int:
     print(f"PLANNED_WORK {len(planned)}")
     for task in planned:
         print_task("PLANNED ", task)
+
+    if last_plan:
+        print(f"LAST_PLAN {last_plan.get('timestamp', 'unknown')}")
+        for task_id, title, reason in zip(
+            last_plan.get("task_ids", []),
+            last_plan.get("titles", []),
+            last_plan.get("planning_reasons", []),
+        ):
+            print(f"LAST_PLANNED {task_id}: {title}")
+            print(f"  planning_reason: {reason}")
+    else:
+        print("LAST_PLAN none")
 
     if blockers:
         print(f"BLOCKERS {len(blockers)}")
