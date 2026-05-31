@@ -18,8 +18,10 @@ from tasklib import (
     next_action,
     next_action_task,
     next_safe_task,
+    overall_state,
     pending_safe_tasks,
     review_waiting_tasks,
+    state_reason,
     utc_now,
 )
 
@@ -33,6 +35,8 @@ def record_cycle_outcome(
     cycle: int,
     episode_iterations: str,
     outcome: str,
+    repo_state: str,
+    repo_state_reason: str,
     attention: str,
     suggested_action: str,
     afk_exit_status: int | None = None,
@@ -47,6 +51,8 @@ def record_cycle_outcome(
         "cycle": cycle,
         "episode_iterations": str(episode_iterations),
         "outcome": outcome,
+        "repo_state": repo_state,
+        "repo_state_reason": repo_state_reason,
         "attention_required": attention,
         "suggested_action": suggested_action,
     }
@@ -66,7 +72,7 @@ def record_cycle_outcome(
     append_execution_event(event)
 
     parts = [
-        f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome} attention_required={attention} suggested_action={suggested_action}"
+        f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome} repo_state={repo_state} repo_state_reason={repo_state_reason} attention_required={attention} suggested_action={suggested_action}"
     ]
     if afk_exit_status is not None:
         parts.append(f"afk_exit_status={afk_exit_status}")
@@ -126,6 +132,8 @@ def main() -> int:
             pre_cycle_dependency_waiting = dependency_waiting_tasks(pre_cycle_data)
             pre_cycle_review_waiting = review_waiting_tasks(pre_cycle_data)
             pre_cycle_blockers = blocked_tasks(pre_cycle_data)
+            pre_cycle_planned = pending_safe_tasks(pre_cycle_data)
+            pre_cycle_clean_idle = is_clean_idle_blocked(pre_cycle_data)
             pre_cycle_suggested_action = next_action(
                 attention=pre_cycle_attention,
                 current=pre_cycle_current,
@@ -153,6 +161,22 @@ def main() -> int:
                     cycle=launched_cycles,
                     episode_iterations=episode_iterations,
                     outcome="failure",
+                    repo_state=overall_state(
+                        current=pre_cycle_current,
+                        planned=pre_cycle_planned,
+                        blockers=pre_cycle_blockers,
+                        dependency_waiting=pre_cycle_dependency_waiting,
+                        clean_idle=pre_cycle_clean_idle,
+                    ),
+                    repo_state_reason=state_reason(
+                        current=pre_cycle_current,
+                        next_task=pre_cycle_next_task,
+                        blockers=pre_cycle_blockers,
+                        review_waiting=pre_cycle_review_waiting,
+                        dependency_waiting=pre_cycle_dependency_waiting,
+                        clean_idle=pre_cycle_clean_idle,
+                        attention=pre_cycle_attention,
+                    ),
                     attention=pre_cycle_attention,
                     suggested_action=pre_cycle_suggested_action,
                     afk_exit_status=status,
@@ -171,6 +195,8 @@ def main() -> int:
             post_cycle_dependency_waiting = dependency_waiting_tasks(post_cycle_data)
             post_cycle_review_waiting = review_waiting_tasks(post_cycle_data)
             post_cycle_blockers = blocked_tasks(post_cycle_data)
+            post_cycle_planned = pending_safe_tasks(post_cycle_data)
+            post_cycle_clean_idle = is_clean_idle_blocked(post_cycle_data)
             post_cycle_suggested_action = next_action(
                 attention=post_cycle_attention,
                 current=post_cycle_current,
@@ -181,6 +207,22 @@ def main() -> int:
                 cycle=launched_cycles,
                 episode_iterations=episode_iterations,
                 outcome=cycle_outcome,
+                repo_state=overall_state(
+                    current=post_cycle_current,
+                    planned=post_cycle_planned,
+                    blockers=post_cycle_blockers,
+                    dependency_waiting=post_cycle_dependency_waiting,
+                    clean_idle=post_cycle_clean_idle,
+                ),
+                repo_state_reason=state_reason(
+                    current=post_cycle_current,
+                    next_task=next_task,
+                    blockers=post_cycle_blockers,
+                    review_waiting=post_cycle_review_waiting,
+                    dependency_waiting=post_cycle_dependency_waiting,
+                    clean_idle=post_cycle_clean_idle,
+                    attention=post_cycle_attention,
+                ),
                 attention=post_cycle_attention,
                 suggested_action=post_cycle_suggested_action,
                 afk_exit_status=status,

@@ -192,6 +192,25 @@ def is_clean_idle_blocked(data: dict) -> bool:
     )
 
 
+def overall_state(
+    *,
+    current: dict | None,
+    planned: list[dict],
+    blockers: list[dict],
+    dependency_waiting: list[dict],
+    clean_idle: bool,
+) -> str:
+    if current:
+        return "active"
+    if clean_idle:
+        return "clean_idle_blocked"
+    if planned or dependency_waiting:
+        return "planned"
+    if blockers:
+        return "blocked"
+    return "idle"
+
+
 def attention_required(data: dict) -> str:
     current = current_in_progress_task(data)
     blockers = blocked_tasks(data)
@@ -261,6 +280,31 @@ def next_action_task(
     if dependency_waiting:
         return dependency_waiting[0]
     return None
+
+
+def state_reason(
+    *,
+    current: dict | None,
+    next_task: dict | None,
+    blockers: list[dict],
+    review_waiting: list[dict],
+    dependency_waiting: list[dict],
+    clean_idle: bool,
+    attention: str,
+) -> str:
+    if current:
+        return "stale_in_progress" if attention == "stale" and is_stale_in_progress_task(current) else "current_in_progress"
+    if clean_idle:
+        return "human_blocked_only"
+    if review_waiting:
+        return "review_waiting"
+    if blockers:
+        return "stale_blocked_task" if attention == "stale" else "human_blocked_pending"
+    if next_task:
+        return "ready_safe_backlog"
+    if dependency_waiting:
+        return "dependency_waiting"
+    return "no_pending_work"
 
 
 def pending_safe_tasks(data: dict) -> list[dict]:

@@ -1858,6 +1858,10 @@ def check_supervisor_loop() -> list[str]:
         failures.append("supervisor cycle summaries must surface the next suggested operator action")
     if "suggested_action_task" not in supervisor_text:
         failures.append("supervisor cycle summaries must surface the concrete task targeted by the suggested action when one exists")
+    if "repo_state" not in supervisor_text:
+        failures.append("supervisor cycle summaries must surface the repo state after each cycle")
+    if "repo_state_reason" not in supervisor_text:
+        failures.append("supervisor cycle summaries must explain why that repo state applies")
     if "completed_task_ids" not in supervisor_text:
         failures.append("supervisor cycle summaries must surface which tasks finished in the cycle")
     if "next_task_id" not in supervisor_text:
@@ -2079,7 +2083,7 @@ def check_supervisor_cycle_summary() -> list[str]:
             return failures
 
         summary_line = (
-            "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=clean_idle attention_required=unblock suggested_action=unblock_human_task afk_exit_status=0 "
+            "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=clean_idle repo_state=clean_idle_blocked repo_state_reason=human_blocked_only attention_required=unblock suggested_action=unblock_human_task afk_exit_status=0 "
             "completed_count=1 completed_task_ids=AUTO-7 completed_task_titles='Add supervisor cycle outcome summaries' "
             "suggested_action_task_id=BLOCKED-1 suggested_action_task_title='Waiting for human input' remaining_safe_tasks=0"
         )
@@ -2096,6 +2100,10 @@ def check_supervisor_cycle_summary() -> list[str]:
                 failures.append("supervisor_cycle_summary event did not record the expected cycle, clean-idle outcome, and afk exit status")
             if event.get("attention_required") != "unblock":
                 failures.append("supervisor_cycle_summary event did not record the expected attention_required signal for the clean-idle cycle")
+            if event.get("repo_state") != "clean_idle_blocked":
+                failures.append("supervisor_cycle_summary event did not record the expected repo state for the clean-idle cycle")
+            if event.get("repo_state_reason") != "human_blocked_only":
+                failures.append("supervisor_cycle_summary event did not record the expected repo state reason for the clean-idle cycle")
             if event.get("suggested_action") != "unblock_human_task":
                 failures.append("supervisor_cycle_summary event did not record the expected suggested action for the clean-idle cycle")
             if event.get("completed_task_ids") != ["AUTO-7"]:
@@ -2193,7 +2201,7 @@ def check_supervisor_cycle_next_task_summary() -> list[str]:
             return failures
 
         expected_line = (
-            "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=progress attention_required=none suggested_action=execute_next_safe_task afk_exit_status=0 "
+            "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=progress repo_state=planned repo_state_reason=ready_safe_backlog attention_required=none suggested_action=execute_next_safe_task afk_exit_status=0 "
             "completed_count=1 completed_task_ids=AUTO-13 completed_task_titles='Finish first task' next_task_id=AUTO-14 "
             "next_task_title='Second queued task' suggested_action_task_id=AUTO-14 suggested_action_task_title='Second queued task' remaining_safe_tasks=1"
         )
@@ -2210,6 +2218,10 @@ def check_supervisor_cycle_next_task_summary() -> list[str]:
                 failures.append("supervisor_cycle_summary event did not record the expected progress outcome and next task id")
             if event.get("attention_required") != "none":
                 failures.append("supervisor_cycle_summary event did not record the expected attention_required signal for the progress cycle")
+            if event.get("repo_state") != "planned":
+                failures.append("supervisor_cycle_summary event did not record the expected repo state for the progress cycle")
+            if event.get("repo_state_reason") != "ready_safe_backlog":
+                failures.append("supervisor_cycle_summary event did not record the expected repo state reason for the progress cycle")
             if event.get("suggested_action") != "execute_next_safe_task":
                 failures.append("supervisor_cycle_summary event did not record the expected suggested action for the progress cycle")
             if event.get("completed_task_ids") != ["AUTO-13"]:
