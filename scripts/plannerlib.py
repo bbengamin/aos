@@ -95,6 +95,64 @@ SAFE_TASK_TEMPLATES = [
     },
 ]
 
+FOLLOW_UP_TEMPLATE_SPECS = [
+    {
+        "generator_key": "supervisor_follow_up",
+        "title_stem": "Refine supervisor cycle outcome summaries",
+        "theme": "supervisor",
+        "priority": "medium",
+        "kind": "improvement",
+        "done_condition_template": "Batch {batch} extends supervisor cycle summaries with one more actionable operator signal while preserving bounded local execution.",
+        "notes_template": "Follow-up batch {batch} keeps the supervisor observable without expanding into risky automation.",
+        "planning_reason_template": "Supervisor summary coverage exists, so batch {batch} should tighten what each AFK cycle reports back to humans.",
+        "requires_done_titles": ["Add supervisor cycle outcome summaries"],
+    },
+    {
+        "generator_key": "planner_follow_up",
+        "title_stem": "Refine planner backlog generation heuristics",
+        "theme": "planner",
+        "priority": "medium",
+        "kind": "improvement",
+        "done_condition_template": "Batch {batch} improves planner candidate selection or explanation quality without introducing unsafe autonomous scope.",
+        "notes_template": "Follow-up batch {batch} keeps self-generated work varied and inspectable.",
+        "planning_reason_template": "Planner backlog controls now exist, so batch {batch} should improve how the planner derives or explains fresh safe work.",
+        "requires_done_titles": ["Add planner candidate audit command"],
+    },
+    {
+        "generator_key": "status_follow_up",
+        "title_stem": "Refine operator status summaries",
+        "theme": "status",
+        "priority": "medium",
+        "kind": "improvement",
+        "done_condition_template": "Batch {batch} adds one more useful status signal that helps a human distinguish active, waiting, stale, and blocked work at a glance.",
+        "notes_template": "Follow-up batch {batch} keeps the operator view concise but more informative.",
+        "planning_reason_template": "Status reporting already covers the main states, so batch {batch} should sharpen the operator summary instead of widening system scope.",
+        "requires_done_titles": ["Add stale-work status indicators"],
+    },
+    {
+        "generator_key": "logs_follow_up",
+        "title_stem": "Refine AFK log indexing and summaries",
+        "theme": "logs",
+        "priority": "low",
+        "kind": "improvement",
+        "done_condition_template": "Batch {batch} improves AFK log indexing or summary extraction so unattended runs remain easy to audit.",
+        "notes_template": "Follow-up batch {batch} keeps unattended log review practical as more runs accumulate.",
+        "planning_reason_template": "AFK log indexing exists, so batch {batch} should improve how unattended run history is summarized for humans.",
+        "requires_done_titles": ["Add AFK log index command"],
+    },
+    {
+        "generator_key": "eval_follow_up",
+        "title_stem": "Harden eval coverage for planner and supervisor loops",
+        "theme": "eval",
+        "priority": "medium",
+        "kind": "improvement",
+        "done_condition_template": "Batch {batch} adds or tightens one more deterministic eval around planner or supervisor behavior.",
+        "notes_template": "Follow-up batch {batch} keeps the loop trustworthy as more self-generated behavior appears.",
+        "planning_reason_template": "The system now plans and supervises more work, so batch {batch} should keep expanding deterministic eval coverage around those loops.",
+        "requires_done_titles": ["Add supervisor cycle outcome summaries", "Add planner candidate audit command"],
+    },
+]
+
 PLANNER_BATCH_SIZE = 3
 PLANNER_THEME_OPEN_LIMIT = 1
 
@@ -104,6 +162,42 @@ def planner_max_auto_tasks() -> int | None:
     if raw_limit and raw_limit.isdigit():
         return int(raw_limit)
     return None
+
+
+def next_follow_up_batch(data: dict, generator_key: str) -> int:
+    max_batch = 0
+    for task in data.get("tasks", []):
+        if task.get("generator_key") != generator_key:
+            continue
+        batch = task.get("follow_up_batch")
+        if isinstance(batch, int):
+            max_batch = max(max_batch, batch)
+    return max_batch + 1
+
+
+def generated_follow_up_templates(data: dict) -> list[dict]:
+    templates = []
+    for spec in FOLLOW_UP_TEMPLATE_SPECS:
+        batch = next_follow_up_batch(data, spec["generator_key"])
+        templates.append(
+            {
+                "title": f"{spec['title_stem']} batch {batch}",
+                "theme": spec["theme"],
+                "priority": spec["priority"],
+                "kind": spec["kind"],
+                "done_condition": spec["done_condition_template"].format(batch=batch),
+                "notes": spec["notes_template"].format(batch=batch),
+                "planning_reason": spec["planning_reason_template"].format(batch=batch),
+                "requires_done_titles": spec.get("requires_done_titles", []),
+                "generator_key": spec["generator_key"],
+                "follow_up_batch": batch,
+            }
+        )
+    return templates
+
+
+def all_planner_templates(data: dict) -> list[dict]:
+    return SAFE_TASK_TEMPLATES + generated_follow_up_templates(data)
 
 
 def template_already_covered(data: dict, template: dict) -> bool:
@@ -167,14 +261,19 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
     budget_exhausted = max_auto_tasks is not None and len(existing_auto) >= max_auto_tasks
     candidates = []
 
-    for template in SAFE_TASK_TEMPLATES:
+    for template in all_planner_templates(data):
         candidate = {
             "title": template["title"],
             "theme": template["theme"],
+            "priority": template["priority"],
+            "kind": template["kind"],
+            "notes": template["notes"],
             "done_condition": template["done_condition"],
             "planning_reason": template["planning_reason"],
             "dependency_titles": template.get("requires_done_titles", []),
             "dependency_ids": resolved_dependency_ids(data, template),
+            "generator_key": template.get("generator_key"),
+            "follow_up_batch": template.get("follow_up_batch"),
         }
 
         if template_already_covered(data, template):

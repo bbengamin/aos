@@ -6,14 +6,21 @@ import sys
 import time
 from pathlib import Path
 
-from tasklib import append_execution_event, has_executable_safe_task, is_clean_idle_blocked, load_tasks, utc_now
+from tasklib import append_execution_event, has_executable_safe_task, is_clean_idle_blocked, load_tasks, next_safe_task, utc_now
 
 
 ROOT = Path(__file__).resolve().parent.parent
 AFK = ROOT / "scripts" / "afk"
 
 
-def record_cycle_outcome(*, cycle: int, episode_iterations: str, outcome: str, afk_exit_status: int | None = None) -> None:
+def record_cycle_outcome(
+    *,
+    cycle: int,
+    episode_iterations: str,
+    outcome: str,
+    afk_exit_status: int | None = None,
+    next_task: dict | None = None,
+) -> None:
     event = {
         "timestamp": utc_now(),
         "event": "supervisor_cycle_summary",
@@ -23,14 +30,19 @@ def record_cycle_outcome(*, cycle: int, episode_iterations: str, outcome: str, a
     }
     if afk_exit_status is not None:
         event["afk_exit_status"] = afk_exit_status
+    if next_task is not None:
+        event["next_task_id"] = next_task.get("id")
+        event["next_task_title"] = next_task.get("title")
     append_execution_event(event)
 
-    if afk_exit_status is None:
-        print(f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome}")
-    else:
-        print(
-            f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome} afk_exit_status={afk_exit_status}"
-        )
+    parts = [f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome}"]
+    if afk_exit_status is not None:
+        parts.append(f"afk_exit_status={afk_exit_status}")
+    if next_task is not None:
+        parts.append(f"next_task_id={next_task.get('id')}")
+        if next_task.get("title"):
+            parts.append(f"next_task_title={next_task.get('title')!r}")
+    print(" ".join(parts))
 
 
 def run_afk(iterations: str) -> int:
@@ -68,11 +80,13 @@ def main() -> int:
 
             post_cycle_data = load_tasks()
             cycle_outcome = "clean_idle" if is_clean_idle_blocked(post_cycle_data) else "progress"
+            next_task = next_safe_task(post_cycle_data) if cycle_outcome == "progress" else None
             record_cycle_outcome(
                 cycle=launched_cycles,
                 episode_iterations=episode_iterations,
                 outcome=cycle_outcome,
                 afk_exit_status=status,
+                next_task=next_task,
             )
 
             if max_cycles and launched_cycles >= max_cycles:

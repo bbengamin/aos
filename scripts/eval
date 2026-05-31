@@ -521,18 +521,22 @@ def check_planning_loop() -> list[str]:
     episode_text = (ROOT / "scripts" / "episode").read_text()
 
     failures = []
-    if "SAFE_TASK_TEMPLATES" not in planner_text:
-        failures.append("plan-next must define safe task templates")
+    if "audit_planner_candidates" not in planner_text:
+        failures.append("plan-next must build tasks from audited planner candidates")
     if "planned_next_tasks" not in planner_text:
         failures.append("plan-next must log planned_next_tasks events")
     if "planning_reason" not in planner_text:
         failures.append("plan-next must record planning_reason for generated tasks")
+    if "FOLLOW_UP_TEMPLATE_SPECS" not in plannerlib_text:
+        failures.append("plannerlib must define open-ended follow-up planner specs")
+    if "generated_follow_up_templates" not in plannerlib_text:
+        failures.append("plannerlib must synthesize follow-up planner candidates")
+    if "all_planner_templates" not in plannerlib_text:
+        failures.append("plannerlib must combine static and generated planner candidates")
     if "PLANNER_THEME_OPEN_LIMIT" not in plannerlib_text:
         failures.append("plannerlib must define a planner theme breadth limit")
     if 'theme_counts.get(template["theme"], 0) >= PLANNER_THEME_OPEN_LIMIT' not in plannerlib_text:
         failures.append("plan-next must limit how many open tasks one planner theme can contribute at once")
-    if "audit_planner_candidates" not in planner_text:
-        failures.append("plan-next must use shared planner candidate audit logic")
     if 'for status in ("covered", "eligible", "blocked")' not in planner_audit_text:
         failures.append("planner-candidates must summarize covered, eligible, and blocked planner candidates")
     if "PLAN_NEXT" not in episode_text:
@@ -748,7 +752,86 @@ def check_plan_next_skips_duplicate_templates() -> list[str]:
             "tasks": [
                 {
                     "id": "AUTO-1",
+                    "title": "Already planned work",
+                    "theme": "supervisor",
+                    "status": "done",
+                    "priority": "medium",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "Already completed planner work.",
+                    "completed_at": "2026-05-31T00:00:00Z",
+                    "completion_summary": "Already completed.",
+                },
+                {
+                    "id": "RISK-ONLY",
+                    "title": "Only blocked risk remains",
+                    "status": "pending",
+                    "priority": "medium",
+                    "kind": "risk",
+                    "safe": False,
+                    "requires_human_review": True,
+                    "blocked_by_human": True,
+                    "done_condition": "Remain blocked.",
+                    "blocker_reason": "Still waiting for human approval.",
+                },
+            ],
+        }
+        tasks_path.write_text(json.dumps(tasks_data, indent=2) + "\n")
+
+        execution_log_path = tmp_root / "mission" / "execution-log.ndjson"
+        execution_log_path.write_text("")
+
+        plan_next_path = tmp_root / "scripts" / "plan-next"
+        plan_next_path.chmod(plan_next_path.stat().st_mode | stat.S_IXUSR)
+
+        env = os.environ.copy()
+        env["AOS_SKIP_PLAN_NEXT_CHECK"] = "1"
+        env["AOS_MAX_AUTO_TASKS"] = "1"
+
+        result = subprocess.run(
+            [str(plan_next_path)],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+        if result.returncode != 0:
+            return [f"plan-next did not skip duplicates cleanly in integration check: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+
+        if "PLANNING_SKIPPED" not in result.stdout or "budget" not in result.stdout:
+            return ["plan-next did not explain that planning stopped because the auto task budget was exhausted"]
+
+        updated_tasks = json.loads(tasks_path.read_text())
+        auto_tasks = [task for task in updated_tasks.get("tasks", []) if task.get("id", "").startswith("AUTO-")]
+        if len(auto_tasks) != 1:
+            return ["plan-next created additional AUTO-* tasks even though the auto task budget was already exhausted"]
+
+        events = [json.loads(line) for line in execution_log_path.read_text().splitlines() if line.strip()]
+        if any(event.get("event") == "planned_next_tasks" for event in events):
+            return ["plan-next logged planned_next_tasks even though the auto task budget was already exhausted"]
+
+    return []
+
+
+def check_plan_next_generates_follow_up_batches() -> list[str]:
+    if os.environ.get("AOS_SKIP_PLAN_NEXT_CHECK") == "1":
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+        tasks_data = {
+            "version": 1,
+            "updated_at": "2026-05-31T00:00:00Z",
+            "tasks": [
+                {
+                    "id": "AUTO-1",
                     "title": "Add supervisor daemon for repeated AFK episodes",
+                    "theme": "supervisor",
                     "status": "done",
                     "priority": "high",
                     "kind": "improvement",
@@ -761,6 +844,7 @@ def check_plan_next_skips_duplicate_templates() -> list[str]:
                 {
                     "id": "AUTO-2",
                     "title": "Add planner-generated task reporting",
+                    "theme": "planner",
                     "status": "done",
                     "priority": "medium",
                     "kind": "improvement",
@@ -773,6 +857,7 @@ def check_plan_next_skips_duplicate_templates() -> list[str]:
                 {
                     "id": "AUTO-3",
                     "title": "Add idle-state status summary command",
+                    "theme": "status",
                     "status": "done",
                     "priority": "medium",
                     "kind": "improvement",
@@ -785,6 +870,7 @@ def check_plan_next_skips_duplicate_templates() -> list[str]:
                 {
                     "id": "AUTO-4",
                     "title": "Add supervisor cycle outcome summaries",
+                    "theme": "supervisor",
                     "status": "done",
                     "priority": "medium",
                     "kind": "improvement",
@@ -797,6 +883,7 @@ def check_plan_next_skips_duplicate_templates() -> list[str]:
                 {
                     "id": "AUTO-5",
                     "title": "Add planner backlog breadth limits",
+                    "theme": "planner",
                     "status": "done",
                     "priority": "medium",
                     "kind": "improvement",
@@ -809,6 +896,7 @@ def check_plan_next_skips_duplicate_templates() -> list[str]:
                 {
                     "id": "AUTO-6",
                     "title": "Add stale-work status indicators",
+                    "theme": "status",
                     "status": "done",
                     "priority": "medium",
                     "kind": "improvement",
@@ -821,6 +909,7 @@ def check_plan_next_skips_duplicate_templates() -> list[str]:
                 {
                     "id": "AUTO-7",
                     "title": "Add task dependency metadata for planned work",
+                    "theme": "planner",
                     "status": "done",
                     "priority": "medium",
                     "kind": "improvement",
@@ -833,6 +922,7 @@ def check_plan_next_skips_duplicate_templates() -> list[str]:
                 {
                     "id": "AUTO-8",
                     "title": "Add AFK log index command",
+                    "theme": "logs",
                     "status": "done",
                     "priority": "low",
                     "kind": "improvement",
@@ -845,6 +935,7 @@ def check_plan_next_skips_duplicate_templates() -> list[str]:
                 {
                     "id": "AUTO-9",
                     "title": "Add planner candidate audit command",
+                    "theme": "planner",
                     "status": "done",
                     "priority": "low",
                     "kind": "improvement",
@@ -889,21 +980,20 @@ def check_plan_next_skips_duplicate_templates() -> list[str]:
         )
 
         if result.returncode != 0:
-            return [f"plan-next did not skip duplicates cleanly in integration check: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+            return [f"plan-next did not generate follow-up batches cleanly: {result.stdout.strip()} {result.stderr.strip()}".strip()]
 
-        if "PLANNING_SKIPPED" not in result.stdout or "eligible" not in result.stdout:
-            return ["plan-next did not explain that eligible planner candidates were already covered"]
+        if "PLANNING_COMPLETED" not in result.stdout:
+            return ["plan-next still bottomed out after the initial planner catalog was fully covered"]
 
         updated_tasks = json.loads(tasks_path.read_text())
-        auto_tasks = [task for task in updated_tasks.get("tasks", []) if task.get("id", "").startswith("AUTO-")]
-        if len(auto_tasks) != 9:
-            return ["plan-next created duplicate AUTO-* tasks even though matching completed work already existed"]
+        new_auto_tasks = [task for task in updated_tasks.get("tasks", []) if task.get("status") == "pending" and task.get("generator_key")]
+        if not new_auto_tasks:
+            return ["plan-next did not create any generated follow-up task after the initial planner catalog was exhausted"]
 
-        events = [json.loads(line) for line in execution_log_path.read_text().splitlines() if line.strip()]
-        if any(event.get("event") == "planned_next_tasks" for event in events):
-            return ["plan-next logged planned_next_tasks even though every eligible planner candidate was already covered"]
+        if not any(task.get("follow_up_batch") == 1 for task in new_auto_tasks):
+            return ["plan-next did not mark generated follow-up tasks with batch metadata"]
 
-    return []
+        return []
 
 
 def check_plan_next_progresses_beyond_initial_templates() -> list[str]:
@@ -1451,6 +1541,8 @@ def check_supervisor_loop() -> list[str]:
         failures.append("supervisor must emit structured per-cycle summaries")
     if "supervisor_cycle_summary" not in supervisor_text:
         failures.append("supervisor must log supervisor_cycle_summary events")
+    if "next_task_id" not in supervisor_text:
+        failures.append("supervisor cycle summaries must surface the next executable task when work remains")
     return failures
 
 
@@ -1683,6 +1775,104 @@ def check_supervisor_cycle_summary() -> list[str]:
     return failures
 
 
+def check_supervisor_cycle_next_task_summary() -> list[str]:
+    if os.environ.get("AOS_SKIP_SUPERVISOR_CHECK") == "1":
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+        tasks_data = {
+            "version": 1,
+            "updated_at": "2026-05-31T00:00:00Z",
+            "tasks": [
+                {
+                    "id": "AUTO-13",
+                    "title": "Finish first task",
+                    "status": "pending",
+                    "priority": "high",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "Be completed by the AFK stub.",
+                },
+                {
+                    "id": "AUTO-14",
+                    "title": "Second queued task",
+                    "status": "pending",
+                    "priority": "medium",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "Remain queued after the first task completes.",
+                },
+            ],
+        }
+        tasks_path.write_text(json.dumps(tasks_data, indent=2) + "\n")
+
+        execution_log_path = tmp_root / "mission" / "execution-log.ndjson"
+        execution_log_path.write_text("")
+
+        afk_path = tmp_root / "scripts" / "afk"
+        afk_path.write_text(
+            "#!/usr/bin/env python3\n"
+            "import json\n"
+            "import sys\n"
+            "from pathlib import Path\n"
+            "root = Path(__file__).resolve().parent.parent\n"
+            "tasks_path = root / 'mission' / 'tasks.json'\n"
+            "data = json.loads(tasks_path.read_text())\n"
+            "for task in data['tasks']:\n"
+            "    if task['id'] == 'AUTO-13':\n"
+            "        task['status'] = 'done'\n"
+            "        task['completed_at'] = '2026-05-31T00:00:00Z'\n"
+            "        task['completion_summary'] = 'AFK stub completed the first task.'\n"
+            "tasks_path.write_text(json.dumps(data, indent=2) + '\\n')\n"
+            "sys.exit(0)\n"
+        )
+        afk_path.chmod(afk_path.stat().st_mode | stat.S_IXUSR)
+
+        env = os.environ.copy()
+        env["AOS_SUPERVISOR_MAX_CYCLES"] = "1"
+        env["AOS_SKIP_SUPERVISOR_CHECK"] = "1"
+
+        result = subprocess.run(
+            [str(tmp_root / "scripts" / "supervisor"), "3"],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=10,
+        )
+
+        failures = []
+        if result.returncode != 0:
+            failures.append(
+                "supervisor did not complete cleanly in the next-task summary integration check: "
+                f"stdout={result.stdout.strip()} stderr={result.stderr.strip()}"
+            )
+            return failures
+
+        expected_line = "SUPERVISOR_CYCLE_SUMMARY cycle=1 outcome=progress afk_exit_status=0 next_task_id=AUTO-14"
+        if expected_line not in result.stdout:
+            failures.append("supervisor did not print the expected next-task cycle summary after making progress")
+
+        events = [json.loads(line) for line in execution_log_path.read_text().splitlines() if line.strip()]
+        summary_events = [event for event in events if event.get("event") == "supervisor_cycle_summary"]
+        if len(summary_events) != 1:
+            failures.append("supervisor did not append exactly one supervisor_cycle_summary event in the next-task summary integration check")
+        else:
+            event = summary_events[0]
+            if event.get("outcome") != "progress" or event.get("next_task_id") != "AUTO-14":
+                failures.append("supervisor_cycle_summary event did not record the expected progress outcome and next task id")
+            if event.get("next_task_title") != "Second queued task":
+                failures.append("supervisor_cycle_summary event did not record the expected next task title")
+
+    return failures
+
+
 def check_afk_log_index() -> list[str]:
     if os.environ.get("AOS_SKIP_AFK_LOG_INDEX_CHECK") == "1":
         return []
@@ -1762,6 +1952,7 @@ def main() -> int:
     failures.extend(check_planning_loop())
     failures.extend(check_plan_next_generates_tasks())
     failures.extend(check_plan_next_skips_duplicate_templates())
+    failures.extend(check_plan_next_generates_follow_up_batches())
     failures.extend(check_plan_next_progresses_beyond_initial_templates())
     failures.extend(check_plan_next_limits_theme_breadth())
     failures.extend(check_planner_candidate_audit_command())
@@ -1770,6 +1961,7 @@ def main() -> int:
     failures.extend(check_supervisor_loop())
     failures.extend(check_supervisor_sleep_resume())
     failures.extend(check_supervisor_cycle_summary())
+    failures.extend(check_supervisor_cycle_next_task_summary())
     failures.extend(check_afk_log_index())
 
     if failures:

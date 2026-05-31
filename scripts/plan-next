@@ -2,7 +2,7 @@
 
 import sys
 
-from plannerlib import SAFE_TASK_TEMPLATES, audit_planner_candidates, planner_max_auto_tasks
+from plannerlib import audit_planner_candidates, planner_max_auto_tasks
 from tasklib import add_task, append_execution_event, load_tasks, next_auto_task_id, pending_safe_tasks, save_tasks, utc_now
 
 
@@ -24,27 +24,26 @@ def main() -> int:
 
     planned = []
     timestamp = utc_now()
-    audit_by_title = {candidate["title"]: candidate for candidate in audit_planner_candidates(data, max_auto_tasks=max_auto_tasks)}
-
-    for template in SAFE_TASK_TEMPLATES:
-        candidate = audit_by_title.get(template["title"])
-        if candidate is None or candidate.get("status") != "eligible":
+    for candidate in audit_planner_candidates(data, max_auto_tasks=max_auto_tasks):
+        if candidate.get("status") != "eligible":
             continue
         task_id = next_auto_task_id(data)
         task = {
             "id": task_id,
-            "title": template["title"],
-            "theme": template["theme"],
+            "title": candidate["title"],
+            "theme": candidate["theme"],
             "status": "pending",
-            "priority": template["priority"],
-            "kind": template["kind"],
+            "priority": candidate["priority"],
+            "kind": candidate["kind"],
             "safe": True,
             "requires_human_review": False,
-            "done_condition": template["done_condition"],
-            "notes": template["notes"],
-            "planning_reason": template["planning_reason"],
+            "done_condition": candidate["done_condition"],
+            "notes": candidate["notes"],
+            "planning_reason": candidate["planning_reason"],
+            "generator_key": candidate.get("generator_key"),
+            "follow_up_batch": candidate.get("follow_up_batch"),
             "depends_on_task_ids": candidate.get("dependency_ids", []),
-            "dependency_titles": template.get("requires_done_titles", []),
+            "dependency_titles": candidate.get("dependency_titles", []),
             "planned_at": timestamp,
         }
         add_task(data, task)
