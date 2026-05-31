@@ -9,6 +9,7 @@ from tasklib import add_task, append_execution_event, load_tasks, next_auto_task
 SAFE_TASK_TEMPLATES = [
     {
         "title": "Add supervisor daemon for repeated AFK episodes",
+        "theme": "supervisor",
         "priority": "high",
         "kind": "improvement",
         "done_condition": "A local daemon script can launch bounded AFK episodes repeatedly, sleep in clean idle-blocked state, and resume when executable work appears.",
@@ -17,6 +18,7 @@ SAFE_TASK_TEMPLATES = [
     },
     {
         "title": "Add planner-generated task reporting",
+        "theme": "planner",
         "priority": "medium",
         "kind": "improvement",
         "done_condition": "The system records when and why new tasks were generated so humans can review planning decisions after AFK runs.",
@@ -25,6 +27,7 @@ SAFE_TASK_TEMPLATES = [
     },
     {
         "title": "Add idle-state status summary command",
+        "theme": "status",
         "priority": "medium",
         "kind": "improvement",
         "done_condition": "A status summary can distinguish active work, planned work, blocked work, and clean idle-blocked state in one command.",
@@ -33,6 +36,7 @@ SAFE_TASK_TEMPLATES = [
     },
     {
         "title": "Add supervisor cycle outcome summaries",
+        "theme": "supervisor",
         "priority": "medium",
         "kind": "improvement",
         "done_condition": "The supervisor records a short structured outcome for each AFK cycle so humans can inspect whether each relaunch ended in progress, clean idle, or failure.",
@@ -42,6 +46,7 @@ SAFE_TASK_TEMPLATES = [
     },
     {
         "title": "Add planner backlog breadth limits",
+        "theme": "planner",
         "priority": "medium",
         "kind": "improvement",
         "done_condition": "The planner can rotate through multiple safe improvement themes without re-adding covered work or flooding the queue with one theme.",
@@ -51,6 +56,7 @@ SAFE_TASK_TEMPLATES = [
     },
     {
         "title": "Add stale-work status indicators",
+        "theme": "status",
         "priority": "medium",
         "kind": "improvement",
         "done_condition": "Status output highlights stale in-progress or long-blocked tasks so humans can spot neglected work quickly.",
@@ -60,6 +66,7 @@ SAFE_TASK_TEMPLATES = [
     },
     {
         "title": "Add task dependency metadata for planned work",
+        "theme": "planner",
         "priority": "medium",
         "kind": "improvement",
         "done_condition": "Planned tasks can carry lightweight dependency hints so the selector and humans can see why some work should wait.",
@@ -69,6 +76,7 @@ SAFE_TASK_TEMPLATES = [
     },
     {
         "title": "Add AFK log index command",
+        "theme": "logs",
         "priority": "low",
         "kind": "improvement",
         "done_condition": "A command can list recent AFK log files with timestamps and outcomes so humans can inspect unattended runs quickly.",
@@ -78,6 +86,7 @@ SAFE_TASK_TEMPLATES = [
     },
     {
         "title": "Add planner candidate audit command",
+        "theme": "planner",
         "priority": "low",
         "kind": "improvement",
         "done_condition": "A command can show which planner candidates are covered, eligible, or blocked so humans can understand why the planner chose or skipped work.",
@@ -88,6 +97,7 @@ SAFE_TASK_TEMPLATES = [
 ]
 
 PLANNER_BATCH_SIZE = 3
+PLANNER_THEME_OPEN_LIMIT = 1
 
 
 def template_already_covered(data: dict, template: dict) -> bool:
@@ -115,6 +125,18 @@ def template_is_eligible(data: dict, template: dict) -> bool:
     return True
 
 
+def open_theme_counts(data: dict) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for task in data.get("tasks", []):
+        if task.get("status") not in {"pending", "in_progress"}:
+            continue
+        theme = task.get("theme")
+        if not theme:
+            continue
+        counts[theme] = counts.get(theme, 0) + 1
+    return counts
+
+
 def main() -> int:
     data = load_tasks()
     max_auto_tasks = None
@@ -136,6 +158,7 @@ def main() -> int:
 
     planned = []
     timestamp = utc_now()
+    theme_counts = open_theme_counts(data)
 
     for template in SAFE_TASK_TEMPLATES:
         if len(planned) >= PLANNER_BATCH_SIZE:
@@ -144,10 +167,13 @@ def main() -> int:
             continue
         if template_already_covered(data, template):
             continue
+        if theme_counts.get(template["theme"], 0) >= PLANNER_THEME_OPEN_LIMIT:
+            continue
         task_id = next_auto_task_id(data)
         task = {
             "id": task_id,
             "title": template["title"],
+            "theme": template["theme"],
             "status": "pending",
             "priority": template["priority"],
             "kind": template["kind"],
@@ -160,6 +186,7 @@ def main() -> int:
         }
         add_task(data, task)
         planned.append(task)
+        theme_counts[task["theme"]] = theme_counts.get(task["theme"], 0) + 1
 
     if not planned:
         print("PLANNING_SKIPPED")
