@@ -41,3 +41,31 @@ Consequences:
 - no package setup is needed
 - behavior remains inspectable in one file per script
 - the next iteration can build on the same approach
+
+## 2026-05-31 - Follow a bounded Ralph-style episode loop
+
+Decision:
+Adopt the Ralph pattern of bounded repeated runs, but keep this repo's loop minimal and mission-file-based.
+
+Why:
+The useful part of Ralph is not recursion itself. It is the discipline of one small slice per run, bounded iterations, and early stop conditions.
+
+Consequences:
+
+- `scripts/episode` uses `MAX_ITERATIONS` instead of an unbounded loop
+- the system stops on human-review-required tasks instead of pushing through them
+- repeated improvement remains possible without surrendering control
+
+## 2026-05-31 - Preserve exactly one active task at a time
+
+Decision:
+If a safe task is already `in_progress`, the selector should keep returning it instead of opening a second one.
+
+Why:
+The mission requires one safe task at a time, and Ralph-style loops work best when each run keeps advancing the current slice until it is complete.
+
+Consequences:
+
+- `scripts/next-task` and `scripts/execute-task` both honor the current in-progress task
+- the system avoids silently widening scope
+- the next missing capability is completion, not selection

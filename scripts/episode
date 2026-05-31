@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent.parent
+PROMPT_PATH = ROOT / "mission" / "bootstrap-prompt.txt"
+EXECUTE_TASK = ROOT / "scripts" / "execute-task"
+EVAL = ROOT / "scripts" / "eval"
+
+
+def run(command: list[str], allow_failure: bool = False) -> int:
+    result = subprocess.run(command, cwd=ROOT)
+    if result.returncode != 0 and not allow_failure:
+        raise SystemExit(result.returncode)
+    return result.returncode
+
+
+def main() -> int:
+    max_iterations = int(os.environ.get("MAX_ITERATIONS", "30"))
+
+    for iteration in range(1, max_iterations + 1):
+        print(f"== Iteration {iteration}/{max_iterations} ==")
+
+        execution_probe = subprocess.run(
+            [str(EXECUTE_TASK), "--dry-run"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        print(execution_probe.stdout, end="")
+
+        if execution_probe.returncode == 2:
+            print("Episode stopped for human review.")
+            return 2
+        if execution_probe.returncode != 0:
+            print("No executable safe task available.")
+            return 1
+
+        prompt = PROMPT_PATH.read_text()
+        run(["opencode", "run", prompt], allow_failure=False)
+
+        status = run([str(EVAL)], allow_failure=True)
+
+        run(["git", "status", "--short"], allow_failure=False)
+        run(["git", "add", "README.md", "agents", "mission", "scripts"], allow_failure=False)
+        run(["git", "commit", "-m", f"agentic-os iteration {iteration}"], allow_failure=True)
+
+        complete = subprocess.run(
+            ["grep", "-R", "MISSION_BOOTSTRAP_COMPLETE", "mission", "README.md", "agents", "scripts"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        if complete.returncode == 0:
+            print("Bootstrap complete.")
+            return 0
+
+        if status != 0:
+            print("Eval failed. Continue only if the next iteration is expected to fix it.")
+            return status
+
+    print("Episode limit reached without completion.")
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+
+import sys
+
+from tasklib import append_execution_event, find_task, load_tasks, next_safe_task, save_tasks, utc_now
+
+
+def print_task(task: dict) -> None:
+    print(f"task_id: {task['id']}")
+    print(f"title: {task['title']}")
+    print(f"done_condition: {task['done_condition']}")
+
+
+def main() -> int:
+    dry_run = "--dry-run" in sys.argv
+    task_id = None
+    for arg in sys.argv[1:]:
+        if not arg.startswith("--"):
+            task_id = arg
+            break
+
+    data = load_tasks()
+    task = find_task(data, task_id) if task_id else next_safe_task(data)
+
+    if not task:
+        print("NO_EXECUTABLE_TASK")
+        return 1
+
+    if task.get("requires_human_review", False) or not task.get("safe", False):
+        print("HUMAN_REVIEW_REQUIRED")
+        print_task(task)
+        append_execution_event(
+            {
+                "timestamp": utc_now(),
+                "event": "blocked_for_human_review",
+                "task_id": task["id"],
+                "title": task["title"],
+            }
+        )
+        return 2
+
+    if dry_run:
+        print("READY_TO_EXECUTE")
+        print_task(task)
+        return 0
+
+    if task.get("status") == "in_progress":
+        print("TASK_ALREADY_IN_PROGRESS")
+        print_task(task)
+        return 0
+
+    if task.get("status") != "pending":
+        print(f"TASK_NOT_PENDING: {task['status']}")
+        return 1
+
+    started_at = utc_now()
+    task["status"] = "in_progress"
+    task["started_at"] = started_at
+    save_tasks(data)
+
+    append_execution_event(
+        {
+            "timestamp": started_at,
+            "event": "started",
+            "task_id": task["id"],
+            "title": task["title"],
+            "done_condition": task["done_condition"],
+        }
+    )
+
+    print("TASK_STARTED")
+    print_task(task)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -2,16 +2,17 @@
 
 ## Current Phase
 
-Bootstrap the minimum mission OS.
+Bootstrap the minimum mission OS and add a bounded safe execution loop.
 
 ## Steps
 
 1. Create durable mission and governance files.
 2. Create a task list with explicit done conditions.
 3. Add a simple selector for one next safe task.
-4. Add a basic eval script for bootstrap capabilities.
-5. Log decisions, risks, and eval outcomes.
-6. Use git commits as iteration memory.
+4. Add a single-task execution helper with review gates.
+5. Add a bounded episode runner for repeated iterations.
+6. Log decisions, execution events, risks, and eval outcomes.
+7. Use git commits as iteration memory.
 
 ## Out Of Scope For Bootstrap
 
@@ -23,4 +24,4 @@ Bootstrap the minimum mission OS.
 
 ## Proposed Next Mission
 
-Implement a tiny single-task executor that records before/after state and refuses high-risk tasks without human review.
+Implement the smallest possible task completion helper so the system can close one task per episode with explicit evidence of progress.

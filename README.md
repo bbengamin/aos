@@ -16,7 +16,10 @@ It is intentionally file-first:
 - store a current plan
 - track tasks with done conditions
 - select exactly one next task
+- start exactly one safe task at a time
+- stop for human review on gated tasks
 - run a basic bootstrap eval
+- run a bounded improvement episode loop
 - log decisions, risks, and eval results
 - propose the next improvement
 - stop for human review on high-risk work
@@ -38,6 +41,8 @@ It is intentionally file-first:
 ## Scripts
 
 - `./scripts/next-task`: prints the next pending task that is not blocked by human review
+- `./scripts/execute-task`: starts one safe task or stops for human review
+- `./scripts/episode`: runs a bounded Ralph-style improvement episode
 - `./scripts/eval`: runs the minimum bootstrap checks
 
 ## Working Rules
@@ -54,6 +59,7 @@ Run:
 
 ```bash
 ./scripts/next-task
+./scripts/execute-task --dry-run
 ./scripts/eval
 ```
 

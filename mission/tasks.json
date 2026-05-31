@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T00:00:00Z",
+  "updated_at": "2026-05-31T12:06:08Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -16,24 +16,61 @@
     {
       "id": "BOOT-2",
       "title": "Add single-task execution script",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "kind": "improvement",
       "safe": true,
       "requires_human_review": false,
       "done_condition": "A script can read tasks, select one safe task, and record a start or skip event.",
-      "notes": "Smallest next improvement after bootstrap eval passes."
+      "notes": "Completed with scripts/execute-task, scripts/tasklib.py, and execution logging.",
+      "completed_at": "2026-05-31T00:00:00Z"
     },
     {
       "id": "BOOT-3",
       "title": "Add human-review gate helper",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "safety",
       "safe": true,
       "requires_human_review": false,
       "done_condition": "The system can classify a task as human-review-required and stop before execution.",
-      "notes": "Keeps control explicit before adding more autonomy."
+      "notes": "Completed with review-gated task metadata and execute-task stop behavior.",
+      "completed_at": "2026-05-31T00:00:00Z"
+    },
+    {
+      "id": "BOOT-4",
+      "title": "Add bounded episode runner",
+      "status": "done",
+      "priority": "high",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "A bounded script can run repeated agent iterations, stop on completion, and stop on human-review-required tasks.",
+      "notes": "Implemented by scripts/episode and aligned to the Ralph-style bounded loop.",
+      "completed_at": "2026-05-31T00:00:00Z"
+    },
+    {
+      "id": "RISK-1",
+      "title": "Review any task that adds external network calls",
+      "status": "pending",
+      "priority": "medium",
+      "kind": "risk",
+      "safe": false,
+      "requires_human_review": true,
+      "done_condition": "A human explicitly approves the addition of external network calls and documents constraints.",
+      "notes": "Sentinel task used to verify review gates remain active."
+    },
+    {
+      "id": "NEXT-1",
+      "title": "Add task completion helper",
+      "status": "in_progress",
+      "priority": "high",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "A script can mark an in-progress task done, append a completion log entry, and record what changed.",
+      "notes": "Smallest next step so the system can close loops, not just open them.",
+      "started_at": "2026-05-31T12:06:08Z"
     }
   ]
 }

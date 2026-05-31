@@ -1,0 +1,3 @@
+{"timestamp":"2026-05-31T00:00:00Z","event":"bootstrap_initialized","task_id":"BOOT-1","title":"Create mission bootstrap structure"}
+{"timestamp": "2026-05-31T12:06:08Z", "event": "started", "task_id": "NEXT-1", "title": "Add task completion helper", "done_condition": "A script can mark an in-progress task done, append a completion log entry, and record what changed."}
+{"timestamp": "2026-05-31T12:06:08Z", "event": "blocked_for_human_review", "task_id": "RISK-1", "title": "Review any task that adds external network calls"}

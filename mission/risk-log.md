@@ -27,3 +27,14 @@ Mitigation:
 - high-risk actions are listed in the constitution
 - guardian role explicitly blocks them pending human review
 - future executor work should check for review requirements first
+
+### 2026-05-31 - Unbounded self-improvement loops
+
+Risk:
+An infinite loop can consume budget and create noisy commits without meaningful progress.
+
+Mitigation:
+
+- `scripts/episode` is bounded by `MAX_ITERATIONS`
+- the loop exits on eval failure instead of silently churning
+- the loop exits on human-review-required tasks
