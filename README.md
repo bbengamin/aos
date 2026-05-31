@@ -45,6 +45,8 @@ It is intentionally file-first:
 - `./scripts/episode`: runs a bounded Ralph-style improvement episode and closes the active task after a passing eval and explicit `COMPLETION_SUMMARY`
 - `./scripts/afk`: runs `episode` with timestamped logging for unattended sessions
 - `./scripts/status`: shows the current task, next task, and human blockers
+- `./scripts/block-task`: mark a task blocked with a human reason
+- `./scripts/unblock-task`: clear a blocker with a human resolution note
 - `./scripts/eval`: runs the minimum bootstrap checks
 
 ## Working Rules
@@ -81,5 +83,17 @@ To see where human action is needed:
 ```
 
 The place to look for blockers is `mission/tasks.json`, and the quickest human-readable view is `./scripts/status`.
+
+To block one task and keep the loop working on others:
+
+```bash
+./scripts/block-task NEXT-4 --reason "Waiting for human decision on scope"
+```
+
+To resolve that blocker and let the loop pick it again:
+
+```bash
+./scripts/unblock-task NEXT-4 --resolution "Human approved the narrow slice"
+```
 
 If eval passes, the bootstrap system is ready for the next safe iteration.

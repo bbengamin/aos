@@ -24,4 +24,4 @@ Bootstrap the minimum mission OS and add a bounded safe execution loop.
 
 ## Proposed Next Mission
 
-Keep the bounded loop moving by making blocked tasks visible without stopping unrelated safe work, then strengthen unattended execution with clearer progress reporting.
+Let humans explicitly block and unblock tasks with reasons and resolutions so unattended episodes can pause one path, continue on others, and later resume with clear context.

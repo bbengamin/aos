@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+
+import sys
+
+from tasklib import append_execution_event, find_task, load_tasks, save_tasks, unblock_task, utc_now
+
+
+def parse_args(argv: list[str]) -> tuple[str | None, str | None]:
+    task_id = None
+    resolution = None
+    index = 1
+    while index < len(argv):
+        arg = argv[index]
+        if arg == "--resolution":
+            index += 1
+            if index >= len(argv):
+                raise ValueError("missing value for --resolution")
+            resolution = argv[index]
+        elif not arg.startswith("--") and task_id is None:
+            task_id = arg
+        else:
+            raise ValueError(f"unknown argument: {arg}")
+        index += 1
+    return task_id, resolution
+
+
+def main() -> int:
+    try:
+        task_id, resolution = parse_args(sys.argv)
+    except ValueError as exc:
+        print(f"USAGE_ERROR: {exc}")
+        return 1
+
+    if not task_id or not resolution:
+        print("USAGE_ERROR: unblock-task <task-id> --resolution <text>")
+        return 1
+
+    data = load_tasks()
+    task = find_task(data, task_id)
+    if not task:
+        print("TASK_NOT_FOUND")
+        return 1
+    if not task.get("blocked_by_human", False):
+        print("TASK_NOT_BLOCKED")
+        return 1
+
+    timestamp = utc_now()
+    unblock_task(task, resolution=resolution, timestamp=timestamp)
+    save_tasks(data)
+
+    append_execution_event(
+        {
+            "timestamp": timestamp,
+            "event": "unblocked_by_human",
+            "task_id": task["id"],
+            "title": task["title"],
+            "resolution": resolution,
+        }
+    )
+
+    print("TASK_UNBLOCKED")
+    print(f"task_id: {task['id']}")
+    print(f"resolution: {resolution}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

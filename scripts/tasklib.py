@@ -70,6 +70,20 @@ def blocked_tasks(data: dict) -> list[dict]:
     return [task for task in data.get("tasks", []) if task.get("blocked_by_human", False)]
 
 
+def block_task(task: dict, *, reason: str, timestamp: str) -> None:
+    task["blocked_by_human"] = True
+    task["blocker_reason"] = reason
+    task["blocked_at"] = timestamp
+    if task.get("status") == "in_progress":
+        task["status"] = "pending"
+
+
+def unblock_task(task: dict, *, resolution: str, timestamp: str) -> None:
+    task["blocked_by_human"] = False
+    task["unblocked_at"] = timestamp
+    task["unblock_resolution"] = resolution
+
+
 def append_execution_event(event: dict) -> None:
     EXECUTION_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with EXECUTION_LOG_PATH.open("a") as handle:

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T13:43:25Z",
+  "updated_at": "2026-05-31T13:30:01Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -93,13 +93,31 @@
     {
       "id": "NEXT-3",
       "title": "Track blocked tasks without stopping unrelated work",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "kind": "improvement",
       "safe": true,
       "requires_human_review": false,
       "done_condition": "The selector skips tasks marked blocked_by_human and a status view shows blockers separately from executable work.",
-      "notes": "Needed so unattended loops can keep progressing on other safe tasks while blocked items wait for humans."
+      "notes": "Needed so unattended loops can keep progressing on other safe tasks while blocked items wait for humans.",
+      "completed_at": "2026-05-31T00:00:00Z",
+      "completion_summary": "Added blocked_by_human support to task selection and a status view for current work, next work, and blockers."
+    },
+    {
+      "id": "NEXT-4",
+      "title": "Add explicit human blocker commands",
+      "status": "pending",
+      "priority": "high",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "Humans can block and unblock tasks with explicit reason/resolution commands and the actions are logged.",
+      "notes": "This creates the minimal human/AI handoff loop for paused work.",
+      "blocked_by_human": false,
+      "blocker_reason": "Waiting for human decision on scope",
+      "blocked_at": "2026-05-31T13:30:00Z",
+      "unblocked_at": "2026-05-31T13:30:01Z",
+      "unblock_resolution": "Human approved the narrow slice"
     }
   ]
 }

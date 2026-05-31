@@ -125,3 +125,17 @@ Consequences:
 - `scripts/episode` now fails closed if the agent does not provide a completion summary
 - task completion remains explicit and durable through `scripts/complete-task`
 - unattended runs keep one source of truth for when a task is actually closed and committed
+
+## 2026-05-31 - Make blocker resolution an explicit command
+
+Decision:
+Humans should block and unblock work through explicit commands instead of editing JSON directly during normal operation.
+
+Why:
+Direct JSON edits are still a fallback, but dedicated commands create a cleaner human/AI handoff and preserve an event trail.
+
+Consequences:
+
+- `scripts/block-task` records why a task paused
+- `scripts/unblock-task` records how the blocker was resolved
+- paused work can resume later with the context preserved in both task state and execution log

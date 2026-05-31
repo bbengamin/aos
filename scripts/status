@@ -11,6 +11,8 @@ def print_task(prefix: str, task: dict) -> None:
     print(f"  done_condition: {task['done_condition']}")
     if task.get("blocker_reason"):
         print(f"  blocker_reason: {task['blocker_reason']}")
+    if task.get("unblock_resolution"):
+        print(f"  unblock_resolution: {task['unblock_resolution']}")
 
 
 def main() -> int:

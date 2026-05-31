@@ -141,3 +141,20 @@ Result:
 Outcome:
 
 The bounded episode loop can now close a completed safe task explicitly before committing the iteration.
+
+## 2026-05-31 - Human blocker workflow eval
+
+Command:
+
+```bash
+./scripts/block-task NEXT-4 --reason "Waiting for human decision on scope"
+./scripts/unblock-task NEXT-4 --resolution "Human approved the narrow slice"
+./scripts/eval
+```
+
+Checks expected:
+
+- humans can explicitly block a task without editing JSON directly
+- humans can explicitly unblock a task with a resolution note
+- execution-log captures both block and unblock events
+- eval confirms the commands are present

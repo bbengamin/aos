@@ -26,6 +26,8 @@ REQUIRED_FILES = [
     "scripts/tasklib.py",
     "scripts/execute-task",
     "scripts/complete-task",
+    "scripts/block-task",
+    "scripts/unblock-task",
     "scripts/episode",
     "scripts/afk",
     "scripts/status",
@@ -129,9 +131,24 @@ def check_review_gate() -> list[str]:
 
 def check_blocker_model() -> list[str]:
     data = json.loads((ROOT / "mission" / "tasks.json").read_text())
-    has_blocked_task = any(task.get("blocked_by_human", False) for task in data.get("tasks", []))
-    if not has_blocked_task:
+    blocked = [task for task in data.get("tasks", []) if task.get("blocked_by_human", False)]
+    if not blocked:
         return ["tasks.json must include at least one task blocked_by_human"]
+
+    blocked_ids = {task.get("id") for task in blocked}
+
+    next_task_result = subprocess.run(
+        [str(ROOT / "scripts" / "next-task")],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if next_task_result.returncode != 0:
+        return [f"next-task failed while checking blockers: {next_task_result.stdout.strip()} {next_task_result.stderr.strip()}".strip()]
+
+    selected_id = next_task_result.stdout.split(":", 1)[0].strip()
+    if selected_id in blocked_ids:
+        return ["next-task selected a blocked_by_human task"]
 
     result = subprocess.run(
         [str(ROOT / "scripts" / "status")],
@@ -143,7 +160,21 @@ def check_blocker_model() -> list[str]:
         return [f"status script failed: {result.stdout.strip()} {result.stderr.strip()}".strip()]
     if "BLOCKERS" not in result.stdout:
         return ["status script output did not include blocker summary"]
+    if "BLOCKED " not in result.stdout:
+        return ["status script output did not list blocked tasks separately"]
     return []
+
+
+def check_blocker_commands() -> list[str]:
+    block_text = (ROOT / "scripts" / "block-task").read_text()
+    unblock_text = (ROOT / "scripts" / "unblock-task").read_text()
+
+    failures = []
+    if "blocked_by_human" not in block_text:
+        failures.append("block-task must set blocked_by_human")
+    if "unblocked_by_human" not in unblock_text:
+        failures.append("unblock-task must record an unblocked_by_human event")
+    return failures
 
 
 def check_episode_completion_loop() -> list[str]:
@@ -171,6 +202,7 @@ def main() -> int:
     failures.extend(check_plan())
     failures.extend(check_review_gate())
     failures.extend(check_blocker_model())
+    failures.extend(check_blocker_commands())
     failures.extend(check_episode_completion_loop())
 
     if failures:
