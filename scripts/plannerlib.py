@@ -287,6 +287,16 @@ def planner_gate_tasks(data: dict) -> list[dict]:
     return pending_safe_tasks(data)
 
 
+def planner_gate_task_states(tasks: list[dict]) -> list[str]:
+    task_states = []
+    for task in tasks:
+        task_id = task.get("id")
+        status = task.get("status")
+        if task_id and status:
+            task_states.append(f"{task_id}:{status}")
+    return task_states
+
+
 def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -> list[dict]:
     existing_auto = [task for task in data.get("tasks", []) if task.get("id", "").startswith("AUTO-")]
     existing_auto_ids = [task.get("id") for task in existing_auto if task.get("id")]
@@ -298,6 +308,7 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
     planner_gate_blocked = bool(gate_tasks)
     gate_task_ids = [task.get("id") for task in gate_tasks if task.get("id")]
     gate_task_titles = [task.get("title") for task in gate_tasks if task.get("title")]
+    gate_task_states = planner_gate_task_states(gate_tasks)
     candidates = []
 
     for template in all_planner_templates(data):
@@ -349,6 +360,7 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
                 candidate["reason"] = "planner_gate_has_executable_safe_tasks"
                 candidate["planner_gate_task_ids"] = gate_task_ids
                 candidate["planner_gate_task_titles"] = gate_task_titles
+                candidate["planner_gate_task_states"] = gate_task_states
             else:
                 candidate["status"] = "eligible"
                 candidate["reason"] = "would_be_planned_now"

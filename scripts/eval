@@ -1431,6 +1431,7 @@ def check_planner_candidate_audit_command() -> list[str]:
             "  reason: planner_gate_has_executable_safe_tasks",
             "  planner_gate_task_ids: AUTO-4",
             "  planner_gate_task_titles: Add planner backlog breadth limits",
+            "  planner_gate_task_states: AUTO-4:pending",
             "  dependency_ids: AUTO-1",
             "BLOCKED Add task dependency metadata for planned work",
             "  reason: waiting_on_done_titles",

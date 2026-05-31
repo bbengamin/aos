@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T19:39:33Z",
+  "updated_at": "2026-05-31T19:42:12Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -1054,7 +1054,7 @@
       "id": "AUTO-41",
       "title": "Refine planner backlog generation heuristics batch 10",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -1070,7 +1070,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T19:37:08Z"
+      "planned_at": "2026-05-31T19:37:08Z",
+      "started_at": "2026-05-31T19:39:47Z",
+      "completed_at": "2026-05-31T19:42:12Z",
+      "completion_summary": "Added planner-gate task state reporting to `scripts/planner-candidates`, updated shared planner audit data and README documentation, and extended `./scripts/eval` coverage for the new planner explanation signal."
     },
     {
       "id": "AUTO-42",

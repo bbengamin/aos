@@ -76,6 +76,10 @@ def print_candidate(candidate: dict) -> None:
     if planner_gate_task_titles:
         print(f"  planner_gate_task_titles: {', '.join(planner_gate_task_titles)}")
 
+    planner_gate_task_states = candidate.get("planner_gate_task_states", [])
+    if planner_gate_task_states:
+        print(f"  planner_gate_task_states: {', '.join(planner_gate_task_states)}")
+
     if candidate.get("covering_task_id"):
         print(f"  covering_task_id: {candidate['covering_task_id']}")
 
