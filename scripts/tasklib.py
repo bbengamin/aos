@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parent.parent
 TASKS_PATH = ROOT / "mission" / "tasks.json"
 EXECUTION_LOG_PATH = ROOT / "mission" / "execution-log.ndjson"
 PRIORITY_RANK = {"high": 0, "medium": 1, "low": 2}
+AUTO_TASK_PREFIX = "AUTO"
 
 
 def utc_now() -> str:
@@ -53,6 +54,10 @@ def next_safe_task(data: dict) -> dict | None:
     return pending[0]
 
 
+def has_executable_safe_task(data: dict) -> bool:
+    return next_safe_task(data) is not None
+
+
 def find_task(data: dict, task_id: str) -> dict | None:
     for task in data.get("tasks", []):
         if task.get("id") == task_id:
@@ -68,6 +73,41 @@ def complete_task(task: dict, *, timestamp: str, summary: str) -> None:
 
 def blocked_tasks(data: dict) -> list[dict]:
     return [task for task in data.get("tasks", []) if task.get("blocked_by_human", False)]
+
+
+def is_clean_idle_blocked(data: dict) -> bool:
+    return (
+        current_in_progress_task(data) is None
+        and not has_executable_safe_task(data)
+        and bool(blocked_tasks(data))
+    )
+
+
+def pending_safe_tasks(data: dict) -> list[dict]:
+    return [
+        task
+        for task in data.get("tasks", [])
+        if task.get("status") == "pending"
+        and task.get("safe", False)
+        and not task.get("requires_human_review", False)
+        and not task.get("blocked_by_human", False)
+    ]
+
+
+def next_auto_task_id(data: dict) -> str:
+    max_number = 0
+    for task in data.get("tasks", []):
+        task_id = task.get("id", "")
+        if not task_id.startswith(f"{AUTO_TASK_PREFIX}-"):
+            continue
+        suffix = task_id.removeprefix(f"{AUTO_TASK_PREFIX}-")
+        if suffix.isdigit():
+            max_number = max(max_number, int(suffix))
+    return f"{AUTO_TASK_PREFIX}-{max_number + 1}"
+
+
+def add_task(data: dict, task: dict) -> None:
+    data.setdefault("tasks", []).append(task)
 
 
 def block_task(task: dict, *, reason: str, timestamp: str) -> None:

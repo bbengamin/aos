@@ -28,12 +28,14 @@ REQUIRED_FILES = [
     "agents/guardian.md",
     "scripts/next-task",
     "scripts/tasklib.py",
+    "scripts/plan-next",
     "scripts/execute-task",
     "scripts/complete-task",
     "scripts/block-task",
     "scripts/unblock-task",
     "scripts/episode",
     "scripts/afk",
+    "scripts/supervisor",
     "scripts/status",
     "scripts/eval",
 ]
@@ -211,6 +213,106 @@ def check_blocker_commands() -> list[str]:
     return failures
 
 
+def check_planning_loop() -> list[str]:
+    planner_text = (ROOT / "scripts" / "plan-next").read_text()
+    episode_text = (ROOT / "scripts" / "episode").read_text()
+
+    failures = []
+    if "SAFE_TASK_TEMPLATES" not in planner_text:
+        failures.append("plan-next must define safe task templates")
+    if "planned_next_tasks" not in planner_text:
+        failures.append("plan-next must log planned_next_tasks events")
+    if "PLAN_NEXT" not in episode_text:
+        failures.append("episode must wire in plan-next")
+    if "PLANNING_COMPLETED" not in episode_text:
+        failures.append("episode must react to planner-created tasks")
+    return failures
+
+
+def check_plan_next_generates_tasks() -> list[str]:
+    if os.environ.get("AOS_SKIP_PLAN_NEXT_CHECK") == "1":
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+        tasks_data = {
+            "version": 1,
+            "updated_at": "2026-05-31T00:00:00Z",
+            "tasks": [
+                {
+                    "id": "DONE-1",
+                    "title": "Seed completed task",
+                    "status": "done",
+                    "priority": "low",
+                    "kind": "bootstrap",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "Seed completion evidence exists.",
+                    "completed_at": "2026-05-31T00:00:00Z",
+                    "completion_summary": "Seed completion evidence.",
+                },
+                {
+                    "id": "RISK-ONLY",
+                    "title": "Only blocked risk remains",
+                    "status": "pending",
+                    "priority": "medium",
+                    "kind": "risk",
+                    "safe": False,
+                    "requires_human_review": True,
+                    "blocked_by_human": True,
+                    "done_condition": "Remain blocked.",
+                    "blocker_reason": "Still waiting for human approval.",
+                },
+            ],
+        }
+        tasks_path.write_text(json.dumps(tasks_data, indent=2) + "\n")
+
+        execution_log_path = tmp_root / "mission" / "execution-log.ndjson"
+        execution_log_path.write_text(
+            json.dumps(
+                {
+                    "timestamp": "2026-05-31T00:00:00Z",
+                    "event": "completed",
+                    "task_id": "DONE-1",
+                    "title": "Seed completed task",
+                    "summary": "Seed completion evidence.",
+                }
+            )
+            + "\n"
+        )
+
+        plan_next_path = tmp_root / "scripts" / "plan-next"
+        plan_next_path.chmod(plan_next_path.stat().st_mode | stat.S_IXUSR)
+
+        env = os.environ.copy()
+        env["AOS_SKIP_PLAN_NEXT_CHECK"] = "1"
+
+        result = subprocess.run(
+            [str(tmp_root / "scripts" / "plan-next")],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+        if result.returncode != 0:
+            return [f"plan-next did not complete cleanly in integration check: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+
+        updated_tasks = json.loads(tasks_path.read_text())
+        planned = [task for task in updated_tasks.get("tasks", []) if task.get("id", "").startswith("AUTO-")]
+        if not planned:
+            return ["plan-next did not create any AUTO-* tasks when no executable safe work existed"]
+
+        events = [json.loads(line) for line in execution_log_path.read_text().splitlines() if line.strip()]
+        if not any(event.get("event") == "planned_next_tasks" for event in events):
+            return ["plan-next did not log planned_next_tasks in the execution log"]
+
+    return []
+
+
 def check_episode_completion_loop() -> list[str]:
     episode_text = (ROOT / "scripts" / "episode").read_text()
     prompt_text = (ROOT / "mission" / "bootstrap-prompt.txt").read_text()
@@ -301,14 +403,14 @@ def check_episode_blocker_continuation() -> list[str]:
                     "done_condition": "Should complete after the blocker.",
                 },
                 {
-                    "id": "NEXT-3",
-                    "title": "Later safe task remains available",
+                    "id": "REVIEW-2",
+                    "title": "Another human review sentinel",
                     "status": "pending",
                     "priority": "low",
-                    "kind": "improvement",
-                    "safe": True,
-                    "requires_human_review": False,
-                    "done_condition": "Should remain pending so baseline eval checks still have executable work.",
+                    "kind": "risk",
+                    "safe": False,
+                    "requires_human_review": True,
+                    "done_condition": "Requires human review.",
                 },
             ],
         }
@@ -327,6 +429,9 @@ def check_episode_blocker_continuation() -> list[str]:
             )
             + "\n"
         )
+
+        plan_next_path = tmp_root / "scripts" / "plan-next"
+        plan_next_path.chmod(plan_next_path.stat().st_mode | stat.S_IXUSR)
 
         bin_dir = Path(tmp_dir) / "bin"
         bin_dir.mkdir()
@@ -358,8 +463,10 @@ def check_episode_blocker_continuation() -> list[str]:
 
         env = os.environ.copy()
         env["PATH"] = f"{bin_dir}{os.pathsep}{env.get('PATH', '')}"
-        env["MAX_ITERATIONS"] = "8"
+        env["MAX_ITERATIONS"] = "10"
         env["AOS_SKIP_EPISODE_BEHAVIOR_CHECK"] = "1"
+        env["AOS_SKIP_SUPERVISOR_CHECK"] = "1"
+        env["AOS_MAX_AUTO_TASKS"] = "3"
 
         result = subprocess.run(
             [str(tmp_root / "scripts" / "episode")],
@@ -378,13 +485,12 @@ def check_episode_blocker_continuation() -> list[str]:
         if "Task blocked by human input request. Continuing to the next iteration." not in result.stdout:
             failures.append("episode did not report continuing after a blocked task")
 
-        if counter_path.read_text().strip() != "3":
-            failures.append("episode did not keep invoking the agent after blocker and completion transitions")
+        if counter_path.read_text().strip() != "5":
+            failures.append("episode did not keep invoking the agent through blocker, completion, and planner-generated follow-up work")
 
         updated_tasks = json.loads(tasks_path.read_text())
         first_task = next(task for task in updated_tasks["tasks"] if task["id"] == "NEXT-1")
         second_task = next(task for task in updated_tasks["tasks"] if task["id"] == "NEXT-2")
-        third_task = next(task for task in updated_tasks["tasks"] if task["id"] == "NEXT-3")
 
         if not first_task.get("blocked_by_human", False) or first_task.get("status") != "pending":
             failures.append("episode did not leave the blocked task pending with blocked_by_human=true")
@@ -395,8 +501,9 @@ def check_episode_blocker_continuation() -> list[str]:
         if not second_task.get("completion_summary"):
             failures.append("episode did not record completion evidence for the later safe task")
 
-        if not third_task.get("blocked_by_human", False) or third_task.get("status") != "pending":
-            failures.append("episode did not keep later blocked work visible after continuing past a blocker")
+        auto_tasks = [task for task in updated_tasks["tasks"] if task["id"].startswith("AUTO-")]
+        if len(auto_tasks) != 3:
+            failures.append("episode did not preserve the planner-generated task budget in the continuation check")
 
         events = [json.loads(line) for line in execution_log_path.read_text().splitlines() if line.strip()]
         if not any(event.get("event") == "blocked_by_human" and event.get("task_id") == "NEXT-1" for event in events):
@@ -405,8 +512,149 @@ def check_episode_blocker_continuation() -> list[str]:
         if not any(event.get("event") == "completed" and event.get("task_id") == "NEXT-2" for event in events):
             failures.append("episode did not log completion for the later safe task")
 
-        if not any(event.get("event") == "blocked_by_human" and event.get("task_id") == "NEXT-3" for event in events):
-            failures.append("episode did not log the later blocker after continuing to more work")
+    return failures
+
+
+def check_supervisor_loop() -> list[str]:
+    supervisor_text = (ROOT / "scripts" / "supervisor").read_text()
+
+    failures = []
+    if "AFK" not in supervisor_text:
+        failures.append("supervisor must launch bounded AFK episodes")
+    if "SUPERVISOR_IDLE_BLOCKED" not in supervisor_text:
+        failures.append("supervisor must report clean idle-blocked state")
+    if "AOS_SUPERVISOR_POLL_SECONDS" not in supervisor_text:
+        failures.append("supervisor must support a configurable poll interval")
+    return failures
+
+
+def check_supervisor_sleep_resume() -> list[str]:
+    if os.environ.get("AOS_SKIP_SUPERVISOR_CHECK") == "1":
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+        tasks_data = {
+            "version": 1,
+            "updated_at": "2026-05-31T00:00:00Z",
+            "tasks": [
+                {
+                    "id": "DONE-1",
+                    "title": "Seed completed task",
+                    "status": "done",
+                    "priority": "low",
+                    "kind": "bootstrap",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "Seed completion evidence exists.",
+                    "completed_at": "2026-05-31T00:00:00Z",
+                    "completion_summary": "Seed completion evidence.",
+                },
+                {
+                    "id": "BLOCKED-1",
+                    "title": "Waiting for human input",
+                    "status": "pending",
+                    "priority": "medium",
+                    "kind": "risk",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "blocked_by_human": True,
+                    "blocker_reason": "Need a human decision.",
+                    "done_condition": "Remain blocked until a human unblocks it.",
+                },
+            ],
+        }
+        tasks_path.write_text(json.dumps(tasks_data, indent=2) + "\n")
+
+        execution_log_path = tmp_root / "mission" / "execution-log.ndjson"
+        execution_log_path.write_text(
+            json.dumps(
+                {
+                    "timestamp": "2026-05-31T00:00:00Z",
+                    "event": "completed",
+                    "task_id": "DONE-1",
+                    "title": "Seed completed task",
+                    "summary": "Seed completion evidence.",
+                }
+            )
+            + "\n"
+        )
+
+        afk_path = tmp_root / "scripts" / "afk"
+        afk_counter_path = Path(tmp_dir) / "afk-count"
+        afk_path.write_text(
+            "#!/bin/sh\n"
+            f"COUNT_FILE=\"{afk_counter_path}\"\n"
+            "count=0\n"
+            "if [ -f \"$COUNT_FILE\" ]; then\n"
+            "  count=$(cat \"$COUNT_FILE\")\n"
+            "fi\n"
+            "count=$((count + 1))\n"
+            "printf '%s' \"$count\" > \"$COUNT_FILE\"\n"
+            "exit 0\n"
+        )
+        afk_path.chmod(afk_path.stat().st_mode | stat.S_IXUSR)
+
+        updater_path = Path(tmp_dir) / "release-work.py"
+        updater_path.write_text(
+            "#!/usr/bin/env python3\n"
+            "import json\n"
+            "import time\n"
+            "from pathlib import Path\n"
+            f"tasks_path = Path({str(tasks_path)!r})\n"
+            "time.sleep(0.5)\n"
+            "data = json.loads(tasks_path.read_text())\n"
+            "data['tasks'].append({\n"
+            "    'id': 'NEXT-1',\n"
+            "    'title': 'Unblocked safe work appears',\n"
+            "    'status': 'pending',\n"
+            "    'priority': 'high',\n"
+            "    'kind': 'improvement',\n"
+            "    'safe': True,\n"
+            "    'requires_human_review': False,\n"
+            "    'done_condition': 'Be picked up by the supervisor once work appears.'\n"
+            "})\n"
+            "tasks_path.write_text(json.dumps(data, indent=2) + '\\n')\n"
+        )
+        updater_path.chmod(updater_path.stat().st_mode | stat.S_IXUSR)
+
+        env = os.environ.copy()
+        env["AOS_SUPERVISOR_POLL_SECONDS"] = "0.05"
+        env["AOS_SUPERVISOR_MAX_CYCLES"] = "1"
+        env["AOS_SKIP_SUPERVISOR_CHECK"] = "1"
+
+        updater = subprocess.Popen([sys.executable, str(updater_path)], cwd=tmp_root)
+        try:
+            result = subprocess.run(
+                [str(tmp_root / "scripts" / "supervisor"), "2"],
+                cwd=tmp_root,
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=10,
+            )
+        finally:
+            updater.wait(timeout=10)
+
+        failures = []
+        if result.returncode != 0:
+            failures.append(
+                "supervisor did not complete cleanly in the sleep/resume integration check: "
+                f"stdout={result.stdout.strip()} stderr={result.stderr.strip()}"
+            )
+            return failures
+
+        if "SUPERVISOR_IDLE_BLOCKED" not in result.stdout:
+            failures.append("supervisor did not report entering clean idle-blocked state before sleeping")
+
+        if "SUPERVISOR_LAUNCH cycle=1 episode_iterations=2" not in result.stdout:
+            failures.append("supervisor did not resume and launch an AFK episode when safe work appeared")
+
+        if not afk_counter_path.exists() or afk_counter_path.read_text().strip() != "1":
+            failures.append("supervisor did not launch exactly one AFK episode after waking up")
 
     return failures
 
@@ -423,8 +671,12 @@ def main() -> int:
     failures.extend(check_review_gate())
     failures.extend(check_blocker_model())
     failures.extend(check_blocker_commands())
+    failures.extend(check_planning_loop())
+    failures.extend(check_plan_next_generates_tasks())
     failures.extend(check_episode_completion_loop())
     failures.extend(check_episode_blocker_continuation())
+    failures.extend(check_supervisor_loop())
+    failures.extend(check_supervisor_sleep_resume())
 
     if failures:
         print("EVAL_FAIL")

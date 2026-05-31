@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+from tasklib import has_executable_safe_task, is_clean_idle_blocked, load_tasks
+
+
+ROOT = Path(__file__).resolve().parent.parent
+AFK = ROOT / "scripts" / "afk"
+
+
+def run_afk(iterations: str) -> int:
+    result = subprocess.run([str(AFK), iterations], cwd=ROOT)
+    return result.returncode
+
+
+def main() -> int:
+    episode_iterations = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("AOS_EPISODE_ITERATIONS", "20")
+    poll_seconds = float(os.environ.get("AOS_SUPERVISOR_POLL_SECONDS", "30"))
+    max_cycles = int(os.environ.get("AOS_SUPERVISOR_MAX_CYCLES", "0"))
+    launched_cycles = 0
+
+    while True:
+        data = load_tasks()
+
+        if has_executable_safe_task(data):
+            if max_cycles and launched_cycles >= max_cycles:
+                print("SUPERVISOR_STOPPED")
+                print("reason: reached configured cycle limit")
+                return 0
+
+            launched_cycles += 1
+            print(f"SUPERVISOR_LAUNCH cycle={launched_cycles} episode_iterations={episode_iterations}")
+            status = run_afk(episode_iterations)
+            if status != 0:
+                print(f"SUPERVISOR_FAILED afk_exit_status={status}")
+                return status
+            continue
+
+        if is_clean_idle_blocked(data):
+            print(f"SUPERVISOR_IDLE_BLOCKED sleep_seconds={poll_seconds}")
+            time.sleep(poll_seconds)
+            continue
+
+        print("SUPERVISOR_STOPPED")
+        print("reason: no executable safe task and no clean idle-blocked state")
+        return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

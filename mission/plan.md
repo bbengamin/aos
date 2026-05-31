@@ -24,4 +24,4 @@ Bootstrap the minimum mission OS and add a bounded safe execution loop.
 
 ## Proposed Next Mission
 
-Add a supervisor process that keeps launching bounded AFK episodes automatically, sleeps while the system is in a clean idle-blocked state, and resumes when new executable work appears.
+Add a supervisor process that keeps launching bounded AFK episodes automatically, sleeps while the system is in a clean idle-blocked state, and resumes when planned or unblocked executable work appears.

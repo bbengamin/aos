@@ -7,7 +7,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
+PYTHON = sys.executable
 PROMPT_PATH = ROOT / "mission" / "bootstrap-prompt.txt"
+PLAN_NEXT = ROOT / "scripts" / "plan-next"
 EXECUTE_TASK = ROOT / "scripts" / "execute-task"
 COMPLETE_TASK = ROOT / "scripts" / "complete-task"
 BLOCK_TASK = ROOT / "scripts" / "block-task"
@@ -84,6 +86,15 @@ def main() -> int:
             print("Task requires human review. Continuing to look for other work next iteration.")
             continue
         if execution_probe.returncode != 0:
+            planning_result = run_capture([PYTHON, str(PLAN_NEXT)], allow_failure=True)
+            if planning_result.returncode != 0:
+                print("Planning failed. Episode stopping.")
+                return planning_result.returncode
+
+            if "PLANNING_COMPLETED" in planning_result.stdout:
+                print("Planner created new safe tasks. Retrying selection in the next iteration.")
+                continue
+
             idle_iterations += 1
             print("No executable safe task available right now.")
             if idle_iterations >= 3:

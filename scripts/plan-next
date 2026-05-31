@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+
+import sys
+
+from tasklib import add_task, append_execution_event, load_tasks, next_auto_task_id, pending_safe_tasks, save_tasks, utc_now
+
+
+SAFE_TASK_TEMPLATES = [
+    {
+        "title": "Add supervisor daemon for repeated AFK episodes",
+        "priority": "high",
+        "kind": "improvement",
+        "done_condition": "A local daemon script can launch bounded AFK episodes repeatedly, sleep in clean idle-blocked state, and resume when executable work appears.",
+        "notes": "This turns episodic AFK runs into a persistent local operating loop without adding secrets or private integrations.",
+    },
+    {
+        "title": "Add planner-generated task reporting",
+        "priority": "medium",
+        "kind": "improvement",
+        "done_condition": "The system records when and why new tasks were generated so humans can review planning decisions after AFK runs.",
+        "notes": "Makes the new planning step inspectable and easier to trust.",
+    },
+    {
+        "title": "Add idle-state status summary command",
+        "priority": "medium",
+        "kind": "improvement",
+        "done_condition": "A status summary can distinguish active work, planned work, blocked work, and clean idle-blocked state in one command.",
+        "notes": "Helps humans quickly understand whether the system is waiting or working.",
+    },
+]
+
+
+def main() -> int:
+    data = load_tasks()
+    max_auto_tasks = None
+    raw_limit = __import__("os").environ.get("AOS_MAX_AUTO_TASKS")
+    if raw_limit and raw_limit.isdigit():
+        max_auto_tasks = int(raw_limit)
+
+    existing_auto = [task for task in data.get("tasks", []) if task.get("id", "").startswith("AUTO-")]
+    if max_auto_tasks is not None and len(existing_auto) >= max_auto_tasks:
+        print("PLANNING_SKIPPED")
+        print("reason: auto task budget already exhausted")
+        return 0
+
+    existing_pending = pending_safe_tasks(data)
+    if existing_pending:
+        print("PLANNING_SKIPPED")
+        print(f"reason: executable safe tasks already exist ({len(existing_pending)})")
+        return 0
+
+    planned = []
+    timestamp = utc_now()
+
+    for template in SAFE_TASK_TEMPLATES:
+        task_id = next_auto_task_id(data)
+        task = {
+            "id": task_id,
+            "title": template["title"],
+            "status": "pending",
+            "priority": template["priority"],
+            "kind": template["kind"],
+            "safe": True,
+            "requires_human_review": False,
+            "done_condition": template["done_condition"],
+            "notes": template["notes"],
+            "planned_at": timestamp,
+        }
+        add_task(data, task)
+        planned.append(task)
+
+    save_tasks(data)
+
+    append_execution_event(
+        {
+            "timestamp": timestamp,
+            "event": "planned_next_tasks",
+            "task_ids": [task["id"] for task in planned],
+            "titles": [task["title"] for task in planned],
+        }
+    )
+
+    print("PLANNING_COMPLETED")
+    for task in planned:
+        print(f"planned_task_id: {task['id']}")
+        print(f"title: {task['title']}")
+        print(f"done_condition: {task['done_condition']}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

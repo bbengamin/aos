@@ -193,3 +193,12 @@ Checks expected:
 - humans can explicitly unblock a task with a resolution note
 - execution-log captures both block and unblock events
 - eval confirms the commands are present
+
+## 2026-05-31 - Local planning loop eval
+
+Checks expected:
+
+- `scripts/plan-next` generates safe `AUTO-*` tasks when no executable safe work exists
+- `scripts/plan-next` logs a `planned_next_tasks` event
+- `scripts/episode` invokes the planner when the executable queue is empty
+- eval confirms the plan stage is wired into the loop

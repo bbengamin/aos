@@ -167,3 +167,17 @@ Consequences:
 - public outbound calls are no longer blocked in principle
 - higher-risk integrations remain review-gated under a new risk sentinel
 - the constitution still blocks secrets, private systems, spending, deployment, and production mutation
+
+## 2026-05-31 - Add a local planning step when the queue is empty
+
+Decision:
+When no executable safe task exists, the system should generate a small set of next safe tasks locally instead of idling immediately.
+
+Why:
+The loop is incomplete without `plan`. AFK can only consume a finite queue unless the system can replenish its own safe backlog.
+
+Consequences:
+
+- `scripts/plan-next` becomes the minimal local planner
+- `scripts/episode` now performs `plan -> act -> review -> learn -> update` more completely
+- the next gap after planning is a long-running supervisor/daemon

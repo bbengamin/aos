@@ -44,9 +44,11 @@ It is intentionally file-first:
 - `./scripts/execute-task`: starts one safe task or stops for human review
 - `./scripts/episode`: runs a bounded Ralph-style improvement episode and closes the active task after a passing eval and explicit `COMPLETION_SUMMARY`
 - `./scripts/afk`: runs `episode` with timestamped logging for unattended sessions
+- `./scripts/supervisor`: relaunches bounded AFK episodes, sleeps while work is cleanly idle-blocked, and resumes when executable work appears
 - `./scripts/status`: shows the current task, next task, and human blockers
 - `./scripts/block-task`: mark a task blocked with a human reason
 - `./scripts/unblock-task`: clear a blocker with a human resolution note
+- `./scripts/plan-next`: generate the next 1-3 safe tasks when the executable queue is empty
 - `./scripts/eval`: runs the minimum bootstrap checks
 
 ## Working Rules
@@ -74,7 +76,7 @@ For an unattended bounded run:
 ```
 
 It writes a timestamped log under `logs/` and returns a non-zero exit code only for real failures.
-Inside `episode`, the agent must emit either `COMPLETION_SUMMARY: ...` for completed work or `BLOCKED_BY_HUMAN: ...` when human input is needed. The runner records the result and keeps using the remaining iteration budget on other safe tasks.
+Inside `episode`, the system now follows a fuller loop: if no executable safe task exists, it runs `./scripts/plan-next`, then continues with act/review/update. The agent must emit either `COMPLETION_SUMMARY: ...` for completed work or `BLOCKED_BY_HUMAN: ...` when human input is needed.
 
 To see where human action is needed:
 
