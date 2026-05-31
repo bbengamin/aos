@@ -6,7 +6,7 @@ import sys
 import time
 from pathlib import Path
 
-from tasklib import attention_required, append_execution_event, has_executable_safe_task, is_clean_idle_blocked, load_tasks, next_safe_task, utc_now
+from tasklib import attention_required, append_execution_event, has_executable_safe_task, is_clean_idle_blocked, load_tasks, next_safe_task, pending_safe_tasks, utc_now
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -22,6 +22,7 @@ def record_cycle_outcome(
     afk_exit_status: int | None = None,
     completed_tasks: list[dict] | None = None,
     next_task: dict | None = None,
+    remaining_safe_tasks: int | None = None,
 ) -> None:
     event = {
         "timestamp": utc_now(),
@@ -39,6 +40,8 @@ def record_cycle_outcome(
     if next_task is not None:
         event["next_task_id"] = next_task.get("id")
         event["next_task_title"] = next_task.get("title")
+    if remaining_safe_tasks is not None:
+        event["remaining_safe_tasks"] = remaining_safe_tasks
     append_execution_event(event)
 
     parts = [f"SUPERVISOR_CYCLE_SUMMARY cycle={cycle} outcome={outcome} attention_required={attention}"]
@@ -54,6 +57,8 @@ def record_cycle_outcome(
         parts.append(f"next_task_id={next_task.get('id')}")
         if next_task.get("title"):
             parts.append(f"next_task_title={next_task.get('title')!r}")
+    if remaining_safe_tasks is not None:
+        parts.append(f"remaining_safe_tasks={remaining_safe_tasks}")
     print(" ".join(parts))
 
 
@@ -111,6 +116,7 @@ def main() -> int:
             cycle_outcome = "clean_idle" if is_clean_idle_blocked(post_cycle_data) else "progress"
             completed_tasks = completed_tasks_during_cycle(pre_cycle_data, post_cycle_data)
             next_task = next_safe_task(post_cycle_data) if cycle_outcome == "progress" else None
+            remaining_safe_tasks = len(pending_safe_tasks(post_cycle_data))
             record_cycle_outcome(
                 cycle=launched_cycles,
                 episode_iterations=episode_iterations,
@@ -119,6 +125,7 @@ def main() -> int:
                 afk_exit_status=status,
                 completed_tasks=completed_tasks,
                 next_task=next_task,
+                remaining_safe_tasks=remaining_safe_tasks,
             )
 
             if max_cycles and launched_cycles >= max_cycles:
