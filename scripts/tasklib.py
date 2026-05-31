@@ -58,6 +58,12 @@ def find_task(data: dict, task_id: str) -> dict | None:
     return None
 
 
+def complete_task(task: dict, *, timestamp: str, summary: str) -> None:
+    task["status"] = "done"
+    task["completed_at"] = timestamp
+    task["completion_summary"] = summary
+
+
 def append_execution_event(event: dict) -> None:
     EXECUTION_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with EXECUTION_LOG_PATH.open("a") as handle:

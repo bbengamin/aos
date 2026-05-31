@@ -24,4 +24,4 @@ Bootstrap the minimum mission OS and add a bounded safe execution loop.
 
 ## Proposed Next Mission
 
-Implement the smallest possible task completion helper so the system can close one task per episode with explicit evidence of progress.
+Teach the bounded episode runner to use the completion helper so one safe task can be closed and committed in a single bounded iteration.

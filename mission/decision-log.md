@@ -69,3 +69,17 @@ Consequences:
 - `scripts/next-task` and `scripts/execute-task` both honor the current in-progress task
 - the system avoids silently widening scope
 - the next missing capability is completion, not selection
+
+## 2026-05-31 - Record completion evidence in task state and execution log
+
+Decision:
+Add a dedicated `scripts/complete-task` command instead of folding completion into `scripts/execute-task`.
+
+Why:
+Starting work and closing work are different actions. A separate command keeps each script small and lets eval require explicit completion evidence.
+
+Consequences:
+
+- task closure stays inspectable and intentional
+- `mission/tasks.json` now carries a `completion_summary` for completed work
+- the next missing capability is wiring completion into the bounded episode loop

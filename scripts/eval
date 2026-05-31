@@ -25,6 +25,7 @@ REQUIRED_FILES = [
     "scripts/next-task",
     "scripts/tasklib.py",
     "scripts/execute-task",
+    "scripts/complete-task",
     "scripts/episode",
     "scripts/eval",
 ]
@@ -53,6 +54,20 @@ def check_tasks() -> list[str]:
         if missing:
             failures.append(f"task {task.get('id', '<unknown>')} missing keys: {sorted(missing)}")
     return failures
+
+
+def check_completion_helper() -> list[str]:
+    data = json.loads((ROOT / "mission" / "tasks.json").read_text())
+    done_tasks = [task for task in data.get("tasks", []) if task.get("status") == "done"]
+    completed_with_summary = [task for task in done_tasks if task.get("completion_summary")]
+    if not completed_with_summary:
+        return ["tasks.json must include at least one done task with completion_summary"]
+
+    log_path = ROOT / "mission" / "execution-log.ndjson"
+    events = [json.loads(line) for line in log_path.read_text().splitlines() if line.strip()]
+    if not any(event.get("event") == "completed" and event.get("summary") for event in events):
+        return ["execution-log.ndjson must include a completed event with summary"]
+    return []
 
 
 def check_next_task() -> list[str]:
@@ -117,6 +132,7 @@ def main() -> int:
     failures.extend(check_next_task())
     failures.extend(check_execute_task())
     failures.extend(check_execution_log())
+    failures.extend(check_completion_helper())
     failures.extend(check_plan())
     failures.extend(check_review_gate())
 

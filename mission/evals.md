@@ -55,3 +55,30 @@ Result:
 Outcome:
 
 The system can now hold one active task, stop on review-gated work, and run a bounded Ralph-style episode loop.
+
+## 2026-05-31 - Task completion helper eval
+
+Command:
+
+```bash
+./scripts/complete-task --summary "Added scripts/complete-task, shared tasklib completion helper, and eval coverage for completion evidence."
+./scripts/eval
+```
+
+Checks expected:
+
+- `complete-task` can close the current in-progress task
+- the completed task records a `completion_summary` in `mission/tasks.json`
+- the execution log records a `completed` event with the same summary
+- eval still returns `EVAL_PASS` after a new safe pending task is available
+
+Result:
+
+- `complete-task` reported `TASK_COMPLETED` for `NEXT-1`
+- `mission/tasks.json` records `completed_at` and `completion_summary` for `NEXT-1`
+- `mission/execution-log.ndjson` contains a `completed` event for `NEXT-1`
+- `scripts/eval` returned `EVAL_PASS`
+
+Outcome:
+
+The repository can now explicitly close one in-progress safe task with durable evidence of what changed.

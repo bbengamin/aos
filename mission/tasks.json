@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T12:06:08Z",
+  "updated_at": "2026-05-31T12:10:13Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -63,14 +63,27 @@
     {
       "id": "NEXT-1",
       "title": "Add task completion helper",
-      "status": "in_progress",
+      "status": "done",
       "priority": "high",
       "kind": "improvement",
       "safe": true,
       "requires_human_review": false,
       "done_condition": "A script can mark an in-progress task done, append a completion log entry, and record what changed.",
       "notes": "Smallest next step so the system can close loops, not just open them.",
-      "started_at": "2026-05-31T12:06:08Z"
+      "started_at": "2026-05-31T12:06:08Z",
+      "completed_at": "2026-05-31T12:10:13Z",
+      "completion_summary": "Added scripts/complete-task, shared tasklib completion helper, and eval coverage for completion evidence."
+    },
+    {
+      "id": "NEXT-2",
+      "title": "Teach episode runner to close completed tasks",
+      "status": "pending",
+      "priority": "high",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "The bounded episode loop can complete the current in-progress task with an explicit summary before committing the iteration.",
+      "notes": "This keeps the loop consistent with the new completion helper instead of leaving task closure as a manual step."
     }
   ]
 }
