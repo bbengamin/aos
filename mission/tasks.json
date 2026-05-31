@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T19:29:21Z",
+  "updated_at": "2026-05-31T19:32:01Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -979,7 +979,7 @@
       "id": "AUTO-38",
       "title": "Refine planner backlog generation heuristics batch 9",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -995,7 +995,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T19:26:49Z"
+      "planned_at": "2026-05-31T19:26:49Z",
+      "started_at": "2026-05-31T19:29:35Z",
+      "completed_at": "2026-05-31T19:32:01Z",
+      "completion_summary": "Added planner budget-exhaustion audit details to `scripts/planner-candidates` by surfacing the AUTO-task limit, current count, and consuming AUTO task ids from `scripts/plannerlib.py`, then extended `./scripts/eval` and `README.md` to verify and document that richer planner explanation."
     },
     {
       "id": "AUTO-39",

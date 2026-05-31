@@ -863,6 +863,65 @@ def check_plan_next_skips_duplicate_templates() -> list[str]:
     return []
 
 
+def check_planner_candidates_budget_exhausted_explanation() -> list[str]:
+    if os.environ.get("AOS_SKIP_PLAN_NEXT_CHECK") == "1":
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+        tasks_data = {
+            "version": 1,
+            "updated_at": "2026-05-31T00:00:00Z",
+            "tasks": [
+                {
+                    "id": "AUTO-1",
+                    "title": "Existing auto task",
+                    "theme": "planner",
+                    "status": "pending",
+                    "priority": "medium",
+                    "kind": "improvement",
+                    "safe": True,
+                    "requires_human_review": False,
+                    "done_condition": "Already consumes the only auto slot.",
+                }
+            ],
+        }
+        tasks_path.write_text(json.dumps(tasks_data, indent=2) + "\n")
+
+        planner_candidates_path = tmp_root / "scripts" / "planner-candidates"
+        planner_candidates_path.chmod(planner_candidates_path.stat().st_mode | stat.S_IXUSR)
+
+        env = os.environ.copy()
+        env["AOS_SKIP_PLAN_NEXT_CHECK"] = "1"
+        env["AOS_MAX_AUTO_TASKS"] = "1"
+
+        result = subprocess.run(
+            [str(planner_candidates_path)],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+        if result.returncode != 0:
+            return [f"planner-candidates failed in auto-budget explanation check: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+
+        failures = []
+        for expected in [
+            "BLOCKED Add supervisor daemon for repeated AFK episodes",
+            "  reason: auto_task_budget_exhausted",
+            "  auto_task_budget_limit: 1",
+            "  auto_task_budget_count: 1",
+            "  auto_task_ids: AUTO-1",
+        ]:
+            if expected not in result.stdout:
+                failures.append(f"planner-candidates did not report {expected!r} in the auto-budget explanation check")
+        return failures
+
+
 def check_plan_next_generates_follow_up_batches() -> list[str]:
     if os.environ.get("AOS_SKIP_PLAN_NEXT_CHECK") == "1":
         return []
@@ -2334,6 +2393,7 @@ def main() -> int:
     failures.extend(check_planning_loop())
     failures.extend(check_plan_next_generates_tasks())
     failures.extend(check_plan_next_skips_duplicate_templates())
+    failures.extend(check_planner_candidates_budget_exhausted_explanation())
     failures.extend(check_plan_next_generates_follow_up_batches())
     failures.extend(check_plan_next_progresses_beyond_initial_templates())
     failures.extend(check_plan_next_limits_theme_breadth())
