@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T15:38:25Z",
+  "updated_at": "2026-05-31T15:41:12Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -379,7 +379,7 @@
       "id": "AUTO-14",
       "title": "Refine planner backlog generation heuristics batch 1",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -395,7 +395,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T15:34:08Z"
+      "planned_at": "2026-05-31T15:34:08Z",
+      "started_at": "2026-05-31T15:38:36Z",
+      "completed_at": "2026-05-31T15:41:12Z",
+      "completion_summary": "aligned `scripts/planner-candidates` with the real planner gate so candidates that would be deferred while executable safe work exists are reported as blocked instead of eligible, updated the eval integration check for that behavior, and documented the planner-gate explanation in `README.md`."
     },
     {
       "id": "AUTO-15",

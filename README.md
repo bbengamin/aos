@@ -102,7 +102,7 @@ To inspect the full planner catalog and see why each candidate would be chosen o
 ./scripts/planner-candidates
 ```
 
-That audit uses the same eligibility logic as `./scripts/plan-next`, so its covered, eligible, and blocked reasons match the planner's actual behavior.
+That audit uses the same eligibility logic as `./scripts/plan-next`, including the top-level gate that blocks all new planning while executable safe work already exists, so its covered, eligible, and blocked reasons match the planner's actual behavior.
 
 To block one task and keep the loop working on others:
 

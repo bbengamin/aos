@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 
+from tasklib import pending_safe_tasks
+
 
 SAFE_TASK_TEMPLATES = [
     {
@@ -259,6 +261,7 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
     theme_counts = open_theme_counts(data)
     planned_count = 0
     budget_exhausted = max_auto_tasks is not None and len(existing_auto) >= max_auto_tasks
+    planner_gate_blocked = bool(pending_safe_tasks(data))
     candidates = []
 
     for template in all_planner_templates(data):
@@ -295,6 +298,9 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
             elif planned_count >= PLANNER_BATCH_SIZE:
                 candidate["status"] = "blocked"
                 candidate["reason"] = "planner_batch_full"
+            elif planner_gate_blocked:
+                candidate["status"] = "blocked"
+                candidate["reason"] = "planner_gate_has_executable_safe_tasks"
             else:
                 candidate["status"] = "eligible"
                 candidate["reason"] = "would_be_planned_now"
