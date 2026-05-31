@@ -118,6 +118,23 @@ def check_next_task() -> list[str]:
     return []
 
 
+def check_dependency_metadata() -> list[str]:
+    planner_text = (ROOT / "scripts" / "plan-next").read_text()
+    tasklib_text = (ROOT / "scripts" / "tasklib.py").read_text()
+    status_text = (ROOT / "scripts" / "status").read_text()
+
+    failures = []
+    if "depends_on_task_ids" not in planner_text:
+        failures.append("plan-next must record depends_on_task_ids on generated tasks")
+    if "dependency_titles" not in planner_text:
+        failures.append("plan-next must record dependency_titles on generated tasks")
+    if "task_is_dependency_blocked" not in tasklib_text:
+        failures.append("tasklib must define dependency-aware task blocking")
+    if "DEPENDENCY_WAITING" not in status_text:
+        failures.append("status must report dependency-waiting tasks")
+    return failures
+
+
 def check_execute_task() -> list[str]:
     result = subprocess.run(
         [str(ROOT / "scripts" / "execute-task"), "--dry-run"],
@@ -599,6 +616,106 @@ def check_plan_next_generates_tasks() -> list[str]:
             return ["plan-next did not log planning_reasons in the execution log"]
 
     return []
+
+
+def check_dependency_aware_selection() -> list[str]:
+    if os.environ.get("AOS_SKIP_STATUS_SUMMARY_CHECK") == "1":
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        tasks_path = tmp_root / "mission" / "tasks.json"
+        tasks_path.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "updated_at": "2026-05-31T00:00:00Z",
+                    "tasks": [
+                        {
+                            "id": "DONE-1",
+                            "title": "Finished prerequisite",
+                            "status": "done",
+                            "priority": "medium",
+                            "kind": "improvement",
+                            "safe": True,
+                            "requires_human_review": False,
+                            "done_condition": "Remain done.",
+                            "completed_at": "2026-05-31T00:00:00Z",
+                            "completion_summary": "Prerequisite already complete.",
+                        },
+                        {
+                            "id": "WAIT-1",
+                            "title": "Task waiting on unresolved dependency",
+                            "status": "pending",
+                            "priority": "high",
+                            "kind": "improvement",
+                            "safe": True,
+                            "requires_human_review": False,
+                            "done_condition": "Wait for missing dependency.",
+                            "dependency_titles": ["Missing prerequisite"],
+                            "depends_on_task_ids": ["MISSING-1"],
+                        },
+                        {
+                            "id": "READY-1",
+                            "title": "Task with resolved dependency",
+                            "status": "pending",
+                            "priority": "medium",
+                            "kind": "improvement",
+                            "safe": True,
+                            "requires_human_review": False,
+                            "done_condition": "Be selected next.",
+                            "dependency_titles": ["Finished prerequisite"],
+                            "depends_on_task_ids": ["DONE-1"],
+                        },
+                    ],
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+
+        next_task_result = subprocess.run(
+            [str(tmp_root / "scripts" / "next-task")],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "AOS_SKIP_STATUS_SUMMARY_CHECK": "1"},
+        )
+        if next_task_result.returncode != 0:
+            return [
+                f"next-task failed in dependency integration check: {next_task_result.stdout.strip()} {next_task_result.stderr.strip()}".strip()
+            ]
+        if "READY-1: Task with resolved dependency" not in next_task_result.stdout:
+            return ["next-task did not skip a task with unresolved dependencies in favor of a ready task"]
+        if "dependencies: Finished prerequisite" not in next_task_result.stdout:
+            return ["next-task did not print dependency hints for the selected task"]
+
+        status_result = subprocess.run(
+            [str(tmp_root / "scripts" / "status")],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "AOS_SKIP_STATUS_SUMMARY_CHECK": "1"},
+        )
+        if status_result.returncode != 0:
+            return [
+                f"status failed in dependency integration check: {status_result.stdout.strip()} {status_result.stderr.strip()}".strip()
+            ]
+
+        failures = []
+        for expected in [
+            "STATE planned",
+            "NEXT READY-1: Task with resolved dependency",
+            "DEPENDENCY_WAITING 1",
+            "WAITING WAIT-1: Task waiting on unresolved dependency",
+            "  dependencies: Missing prerequisite",
+            "  unresolved_dependency_ids: MISSING-1",
+        ]:
+            if expected not in status_result.stdout:
+                failures.append(f"status did not report {expected!r} in the dependency integration check")
+        return failures
 
 
 def check_plan_next_skips_duplicate_templates() -> list[str]:
@@ -1448,9 +1565,11 @@ def main() -> int:
     failures.extend(check_plan())
     failures.extend(check_review_gate())
     failures.extend(check_blocker_model())
+    failures.extend(check_dependency_metadata())
     failures.extend(check_status_summary_modes())
     failures.extend(check_status_last_plan_summary())
     failures.extend(check_status_stale_work_indicators())
+    failures.extend(check_dependency_aware_selection())
     failures.extend(check_blocker_commands())
     failures.extend(check_planning_loop())
     failures.extend(check_plan_next_generates_tasks())

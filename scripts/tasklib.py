@@ -69,9 +69,40 @@ def current_in_progress_task(data: dict) -> dict | None:
     return in_progress[0]
 
 
+def task_is_done(task: dict) -> bool:
+    return task.get("status") == "done"
+
+
+def dependency_titles(task: dict) -> list[str]:
+    return [title for title in task.get("dependency_titles", []) if title]
+
+
+def dependency_task_ids(task: dict) -> list[str]:
+    return [task_id for task_id in task.get("depends_on_task_ids", []) if task_id]
+
+
+def unresolved_dependency_ids(task: dict, data: dict) -> list[str]:
+    unresolved = []
+    for dependency_id in dependency_task_ids(task):
+        dependency = find_task(data, dependency_id)
+        if dependency is None or not task_is_done(dependency):
+            unresolved.append(dependency_id)
+    return unresolved
+
+
+def task_is_dependency_blocked(task: dict, data: dict) -> bool:
+    return bool(unresolved_dependency_ids(task, data))
+
+
 def next_safe_task(data: dict) -> dict | None:
     current = current_in_progress_task(data)
-    if current and not current.get("requires_human_review", False) and current.get("safe", False):
+    if (
+        current
+        and not current.get("requires_human_review", False)
+        and current.get("safe", False)
+        and not current.get("blocked_by_human", False)
+        and not task_is_dependency_blocked(current, data)
+    ):
         return current
 
     tasks = data.get("tasks", [])
@@ -81,6 +112,7 @@ def next_safe_task(data: dict) -> dict | None:
         if task.get("status") == "pending"
         and not task.get("requires_human_review", False)
         and not task.get("blocked_by_human", False)
+        and not task_is_dependency_blocked(task, data)
     ]
     if not pending:
         return None
@@ -127,7 +159,9 @@ def pending_unblocked_tasks(data: dict) -> list[dict]:
     return [
         task
         for task in data.get("tasks", [])
-        if task.get("status") == "pending" and not task.get("blocked_by_human", False)
+        if task.get("status") == "pending"
+        and not task.get("blocked_by_human", False)
+        and not task_is_dependency_blocked(task, data)
     ]
 
 
@@ -148,6 +182,7 @@ def pending_safe_tasks(data: dict) -> list[dict]:
         and task.get("safe", False)
         and not task.get("requires_human_review", False)
         and not task.get("blocked_by_human", False)
+        and not task_is_dependency_blocked(task, data)
     ]
 
 

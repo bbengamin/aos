@@ -13,6 +13,8 @@ def main() -> int:
 
     print(f"{task['id']}: {task['title']}")
     print(f"status: {task['status']}")
+    if task.get("dependency_titles"):
+        print(f"dependencies: {', '.join(task['dependency_titles'])}")
     print(f"done_condition: {task['done_condition']}")
     return 0
 

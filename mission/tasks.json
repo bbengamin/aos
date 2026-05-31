@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T15:08:37Z",
+  "updated_at": "2026-05-31T15:12:48Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -290,6 +290,37 @@
       "started_at": "2026-05-31T15:06:01Z",
       "completed_at": "2026-05-31T15:08:37Z",
       "completion_summary": "Added stale-work indicators to `scripts/status` for aging in-progress and long-blocked tasks, backed by shared timestamp helpers, README docs, and passing `./scripts/eval` coverage."
+    },
+    {
+      "id": "AUTO-10",
+      "title": "Add task dependency metadata for planned work",
+      "theme": "planner",
+      "status": "done",
+      "priority": "medium",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "Planned tasks can carry lightweight dependency hints so the selector and humans can see why some work should wait.",
+      "notes": "Adds more structure to a growing self-generated backlog without introducing a heavy workflow engine.",
+      "planning_reason": "As the planner generates more follow-up work, lightweight dependency hints keep the backlog understandable and reduce accidental out-of-order execution.",
+      "planned_at": "2026-05-31T15:08:45Z",
+      "started_at": "2026-05-31T15:08:45Z",
+      "completed_at": "2026-05-31T15:12:48Z",
+      "completion_summary": "added lightweight planner task dependency metadata, made next-task/status skip and report unresolved dependencies, and extended eval coverage for dependency-aware selection"
+    },
+    {
+      "id": "AUTO-11",
+      "title": "Add AFK log index command",
+      "theme": "logs",
+      "status": "pending",
+      "priority": "low",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "A command can list recent AFK log files with timestamps and outcomes so humans can inspect unattended runs quickly.",
+      "notes": "Improves inspectability of longer unattended sessions.",
+      "planning_reason": "Once unattended runs accumulate, humans need a fast index over AFK logs instead of opening individual files manually.",
+      "planned_at": "2026-05-31T15:08:45Z"
     }
   ]
 }

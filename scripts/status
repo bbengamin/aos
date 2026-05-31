@@ -6,6 +6,7 @@ from tasklib import (
     age_seconds,
     blocked_tasks,
     current_in_progress_task,
+    dependency_titles,
     format_age,
     is_clean_idle_blocked,
     is_long_blocked_task,
@@ -14,6 +15,8 @@ from tasklib import (
     load_tasks,
     next_safe_task,
     pending_safe_tasks,
+    task_is_dependency_blocked,
+    unresolved_dependency_ids,
 )
 
 
@@ -23,6 +26,9 @@ def print_task(prefix: str, task: dict) -> None:
     print(f"  done_condition: {task['done_condition']}")
     if task.get("planning_reason"):
         print(f"  planning_reason: {task['planning_reason']}")
+    titles = dependency_titles(task)
+    if titles:
+        print(f"  dependencies: {', '.join(titles)}")
     if task.get("blocker_reason"):
         print(f"  blocker_reason: {task['blocker_reason']}")
     if task.get("unblock_resolution"):
@@ -42,12 +48,12 @@ def print_task(prefix: str, task: dict) -> None:
         print(f"  attention: {attention}{suffix}")
 
 
-def overall_state(*, current: dict | None, planned: list[dict], blockers: list[dict], clean_idle: bool) -> str:
+def overall_state(*, current: dict | None, planned: list[dict], blockers: list[dict], dependency_waiting: list[dict], clean_idle: bool) -> str:
     if current:
         return "active"
     if clean_idle:
         return "clean_idle_blocked"
-    if planned:
+    if planned or dependency_waiting:
         return "planned"
     if blockers:
         return "blocked"
@@ -61,10 +67,19 @@ def main() -> int:
     next_task = next_safe_task(data)
     planned = pending_safe_tasks(data)
     blockers = blocked_tasks(data)
+    dependency_waiting = [
+        task
+        for task in data.get("tasks", [])
+        if task.get("status") == "pending"
+        and not task.get("blocked_by_human", False)
+        and task_is_dependency_blocked(task, data)
+    ]
     clean_idle = is_clean_idle_blocked(data)
     last_plan = latest_planning_event()
 
-    print(f"STATE {overall_state(current=current, planned=planned, blockers=blockers, clean_idle=clean_idle)}")
+    print(
+        f"STATE {overall_state(current=current, planned=planned, blockers=blockers, dependency_waiting=dependency_waiting, clean_idle=clean_idle)}"
+    )
     print(f"CLEAN_IDLE_BLOCKED {'yes' if clean_idle else 'no'}")
 
     if current:
@@ -108,6 +123,13 @@ def main() -> int:
             print_task("BLOCKED ", task)
     else:
         print("BLOCKERS 0")
+
+    print(f"DEPENDENCY_WAITING {len(dependency_waiting)}")
+    for task in dependency_waiting:
+        print_task("WAITING ", task)
+        unresolved = unresolved_dependency_ids(task, data)
+        if unresolved:
+            print(f"  unresolved_dependency_ids: {', '.join(unresolved)}")
 
     return 0
 
