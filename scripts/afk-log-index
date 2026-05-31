@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent.parent
+LOG_DIR = ROOT / "logs"
+
+
+def parse_log_timestamp(path: Path) -> str | None:
+    stem = path.stem
+    if not stem.startswith("afk-"):
+        return None
+    try:
+        timestamp = datetime.strptime(stem.removeprefix("afk-"), "%Y%m%d-%H%M%S")
+    except ValueError:
+        return None
+    return timestamp.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def detect_outcome(lines: list[str]) -> tuple[str, str | None]:
+    latest_index = -1
+    latest_outcome = "unknown"
+    latest_evidence = None
+
+    for index, raw_line in enumerate(lines):
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("COMPLETION_SUMMARY:") or line == "TASK_COMPLETED":
+            latest_index = index
+            latest_outcome = "progress"
+            latest_evidence = line
+        elif line.startswith("BLOCKED_BY_HUMAN:") or line == "TASK_BLOCKED":
+            if index >= latest_index:
+                latest_index = index
+                latest_outcome = "blocked"
+                latest_evidence = line
+        elif line == "Episode ended after repeated idle iterations.":
+            if index >= latest_index:
+                latest_index = index
+                latest_outcome = "idle"
+                latest_evidence = line
+        elif line.startswith("EVAL_FAIL") or line.startswith("Traceback (most recent call last):"):
+            if index >= latest_index:
+                latest_index = index
+                latest_outcome = "failure"
+                latest_evidence = line
+
+    return latest_outcome, latest_evidence
+
+
+def latest_task_details(lines: list[str]) -> tuple[str | None, str | None]:
+    task_id = None
+    task_title = None
+    for raw_line in lines:
+        line = raw_line.strip()
+        if line.startswith("task_id:"):
+            task_id = line.split(":", 1)[1].strip()
+        elif line.startswith("title:"):
+            task_title = line.split(":", 1)[1].strip()
+    return task_id, task_title
+
+
+def indexed_logs(limit: int) -> list[tuple[Path, str]]:
+    candidates = []
+    for path in LOG_DIR.glob("afk-*.log"):
+        timestamp = parse_log_timestamp(path)
+        if timestamp is None:
+            continue
+        candidates.append((path, timestamp))
+    candidates.sort(key=lambda item: item[1], reverse=True)
+    return candidates[:limit]
+
+
+def main() -> int:
+    if len(sys.argv) > 2:
+        print(f"Usage: {Path(sys.argv[0]).name} [limit]", file=sys.stderr)
+        return 1
+
+    limit = 10
+    if len(sys.argv) == 2:
+        try:
+            limit = int(sys.argv[1])
+        except ValueError:
+            print("limit must be an integer", file=sys.stderr)
+            return 1
+        if limit <= 0:
+            print("limit must be positive", file=sys.stderr)
+            return 1
+
+    logs = indexed_logs(limit)
+    print(f"AFK_LOGS {len(logs)}")
+    for path, timestamp in logs:
+        lines = path.read_text(errors="replace").splitlines()
+        outcome, evidence = detect_outcome(lines)
+        task_id, task_title = latest_task_details(lines)
+        print(f"{timestamp} {outcome} {path.name}")
+        if task_id:
+            print(f"  last_task_id: {task_id}")
+        if task_title:
+            print(f"  last_task_title: {task_title}")
+        if evidence:
+            print(f"  evidence: {evidence}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

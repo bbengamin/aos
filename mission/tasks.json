@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T15:12:48Z",
+  "updated_at": "2026-05-31T15:16:48Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -312,7 +312,7 @@
       "id": "AUTO-11",
       "title": "Add AFK log index command",
       "theme": "logs",
-      "status": "pending",
+      "status": "done",
       "priority": "low",
       "kind": "improvement",
       "safe": true,
@@ -320,7 +320,10 @@
       "done_condition": "A command can list recent AFK log files with timestamps and outcomes so humans can inspect unattended runs quickly.",
       "notes": "Improves inspectability of longer unattended sessions.",
       "planning_reason": "Once unattended runs accumulate, humans need a fast index over AFK logs instead of opening individual files manually.",
-      "planned_at": "2026-05-31T15:08:45Z"
+      "planned_at": "2026-05-31T15:08:45Z",
+      "started_at": "2026-05-31T15:12:57Z",
+      "completed_at": "2026-05-31T15:16:48Z",
+      "completion_summary": "Added `scripts/afk-log-index` to list recent AFK logs with parsed timestamps, outcomes, and last-task context, documented it in `README.md`, and extended `./scripts/eval` with integration coverage for the new log index command."
     }
   ]
 }

@@ -35,6 +35,7 @@ REQUIRED_FILES = [
     "scripts/unblock-task",
     "scripts/episode",
     "scripts/afk",
+    "scripts/afk-log-index",
     "scripts/supervisor",
     "scripts/status",
     "scripts/eval",
@@ -1554,6 +1555,65 @@ def check_supervisor_cycle_summary() -> list[str]:
     return failures
 
 
+def check_afk_log_index() -> list[str]:
+    if os.environ.get("AOS_SKIP_AFK_LOG_INDEX_CHECK") == "1":
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir) / "repo"
+        shutil.copytree(ROOT, tmp_root, ignore=shutil.ignore_patterns(".git", "__pycache__", "logs"))
+
+        logs_dir = tmp_root / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        (logs_dir / "afk-20260531-100000.log").write_text(
+            "TASK_STARTED\n"
+            "task_id: AUTO-0\n"
+            "title: Older failed task\n"
+            "Traceback (most recent call last):\n"
+        )
+        (logs_dir / "afk-20260531-110000.log").write_text(
+            "TASK_STARTED\n"
+            "task_id: AUTO-1\n"
+            "title: Waiting task\n"
+            "BLOCKED_BY_HUMAN: Need input before continuing.\n"
+        )
+        (logs_dir / "afk-20260531-120000.log").write_text(
+            "TASK_STARTED\n"
+            "task_id: AUTO-2\n"
+            "title: Completed task\n"
+            "COMPLETION_SUMMARY: Added the missing log index command.\n"
+        )
+
+        result = subprocess.run(
+            [str(tmp_root / "scripts" / "afk-log-index"), "2"],
+            cwd=tmp_root,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "AOS_SKIP_AFK_LOG_INDEX_CHECK": "1"},
+        )
+
+        if result.returncode != 0:
+            return [f"afk-log-index failed in integration check: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+
+        failures = []
+        for expected in [
+            "AFK_LOGS 2",
+            "2026-05-31T12:00:00Z progress afk-20260531-120000.log",
+            "  last_task_id: AUTO-2",
+            "  last_task_title: Completed task",
+            "  evidence: COMPLETION_SUMMARY: Added the missing log index command.",
+            "2026-05-31T11:00:00Z blocked afk-20260531-110000.log",
+            "  last_task_id: AUTO-1",
+            "  last_task_title: Waiting task",
+            "  evidence: BLOCKED_BY_HUMAN: Need input before continuing.",
+        ]:
+            if expected not in result.stdout:
+                failures.append(f"afk-log-index did not report {expected!r} in the integration check")
+        if "afk-20260531-100000.log" in result.stdout:
+            failures.append("afk-log-index did not respect the requested result limit")
+        return failures
+
+
 def main() -> int:
     failures = []
     failures.extend(check_files())
@@ -1581,6 +1641,7 @@ def main() -> int:
     failures.extend(check_supervisor_loop())
     failures.extend(check_supervisor_sleep_resume())
     failures.extend(check_supervisor_cycle_summary())
+    failures.extend(check_afk_log_index())
 
     if failures:
         print("EVAL_FAIL")
