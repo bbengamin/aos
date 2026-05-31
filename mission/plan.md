@@ -24,4 +24,4 @@ Bootstrap the minimum mission OS and add a bounded safe execution loop.
 
 ## Proposed Next Mission
 
-Teach the bounded episode runner to use the completion helper so one safe task can be closed and committed in a single bounded iteration.
+Teach the bounded episode runner to use the completion helper so one safe task can be closed and committed in a single bounded iteration, while blocked tasks remain visible but do not stop unrelated safe work.

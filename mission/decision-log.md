@@ -97,3 +97,17 @@ Consequences:
 - `scripts/episode` remains the core loop
 - `scripts/afk` handles log file creation and clearer exit messaging
 - unattended runs stay easy to inspect after the fact
+
+## 2026-05-31 - Separate blocked tasks from executable tasks
+
+Decision:
+Tasks blocked on human input should stay visible in task state, but they should not stop unrelated safe work from being selected.
+
+Why:
+The system should keep making safe progress when one path is waiting on a human. Stopping the whole loop for every blocked task would waste unattended episodes.
+
+Consequences:
+
+- tasks can now carry `blocked_by_human` and `blocker_reason`
+- `scripts/next-task` skips blocked tasks
+- `scripts/status` provides the human review inbox

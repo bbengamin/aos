@@ -44,6 +44,7 @@ It is intentionally file-first:
 - `./scripts/execute-task`: starts one safe task or stops for human review
 - `./scripts/episode`: runs a bounded Ralph-style improvement episode
 - `./scripts/afk`: runs `episode` with timestamped logging for unattended sessions
+- `./scripts/status`: shows the current task, next task, and human blockers
 - `./scripts/eval`: runs the minimum bootstrap checks
 
 ## Working Rules
@@ -71,5 +72,13 @@ For an unattended bounded run:
 ```
 
 It writes a timestamped log under `logs/` and returns a non-zero exit code if the episode stops for review or fails.
+
+To see where human action is needed:
+
+```bash
+./scripts/status
+```
+
+The place to look for blockers is `mission/tasks.json`, and the quickest human-readable view is `./scripts/status`.
 
 If eval passes, the bootstrap system is ready for the next safe iteration.

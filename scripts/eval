@@ -28,6 +28,7 @@ REQUIRED_FILES = [
     "scripts/complete-task",
     "scripts/episode",
     "scripts/afk",
+    "scripts/status",
     "scripts/eval",
 ]
 
@@ -126,6 +127,25 @@ def check_review_gate() -> list[str]:
     return []
 
 
+def check_blocker_model() -> list[str]:
+    data = json.loads((ROOT / "mission" / "tasks.json").read_text())
+    has_blocked_task = any(task.get("blocked_by_human", False) for task in data.get("tasks", []))
+    if not has_blocked_task:
+        return ["tasks.json must include at least one task blocked_by_human"]
+
+    result = subprocess.run(
+        [str(ROOT / "scripts" / "status")],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return [f"status script failed: {result.stdout.strip()} {result.stderr.strip()}".strip()]
+    if "BLOCKERS" not in result.stdout:
+        return ["status script output did not include blocker summary"]
+    return []
+
+
 def main() -> int:
     failures = []
     failures.extend(check_files())
@@ -136,6 +156,7 @@ def main() -> int:
     failures.extend(check_completion_helper())
     failures.extend(check_plan())
     failures.extend(check_review_gate())
+    failures.extend(check_blocker_model())
 
     if failures:
         print("EVAL_FAIL")

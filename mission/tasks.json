@@ -57,6 +57,8 @@
       "kind": "risk",
       "safe": false,
       "requires_human_review": true,
+      "blocked_by_human": true,
+      "blocker_reason": "Needs explicit human approval before any external network call is introduced.",
       "done_condition": "A human explicitly approves the addition of external network calls and documents constraints.",
       "notes": "Sentinel task used to verify review gates remain active."
     },
@@ -84,6 +86,17 @@
       "requires_human_review": false,
       "done_condition": "The bounded episode loop can complete the current in-progress task with an explicit summary before committing the iteration.",
       "notes": "This keeps the loop consistent with the new completion helper instead of leaving task closure as a manual step."
+    },
+    {
+      "id": "NEXT-3",
+      "title": "Track blocked tasks without stopping unrelated work",
+      "status": "pending",
+      "priority": "high",
+      "kind": "improvement",
+      "safe": true,
+      "requires_human_review": false,
+      "done_condition": "The selector skips tasks marked blocked_by_human and a status view shows blockers separately from executable work.",
+      "notes": "Needed so unattended loops can keep progressing on other safe tasks while blocked items wait for humans."
     }
   ]
 }

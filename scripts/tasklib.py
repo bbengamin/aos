@@ -43,7 +43,9 @@ def next_safe_task(data: dict) -> dict | None:
     pending = [
         task
         for task in tasks
-        if task.get("status") == "pending" and not task.get("requires_human_review", False)
+        if task.get("status") == "pending"
+        and not task.get("requires_human_review", False)
+        and not task.get("blocked_by_human", False)
     ]
     if not pending:
         return None
@@ -62,6 +64,10 @@ def complete_task(task: dict, *, timestamp: str, summary: str) -> None:
     task["status"] = "done"
     task["completed_at"] = timestamp
     task["completion_summary"] = summary
+
+
+def blocked_tasks(data: dict) -> list[dict]:
+    return [task for task in data.get("tasks", []) if task.get("blocked_by_human", False)]
 
 
 def append_execution_event(event: dict) -> None:

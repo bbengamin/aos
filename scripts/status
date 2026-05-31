@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+
+import sys
+
+from tasklib import blocked_tasks, current_in_progress_task, load_tasks, next_safe_task
+
+
+def print_task(prefix: str, task: dict) -> None:
+    print(f"{prefix}{task['id']}: {task['title']}")
+    print(f"  status: {task['status']}")
+    print(f"  done_condition: {task['done_condition']}")
+    if task.get("blocker_reason"):
+        print(f"  blocker_reason: {task['blocker_reason']}")
+
+
+def main() -> int:
+    data = load_tasks()
+
+    current = current_in_progress_task(data)
+    next_task = next_safe_task(data)
+    blockers = blocked_tasks(data)
+
+    if current:
+        print_task("CURRENT ", current)
+    else:
+        print("CURRENT none")
+
+    if next_task:
+        print_task("NEXT ", next_task)
+    else:
+        print("NEXT none")
+
+    if blockers:
+        print(f"BLOCKERS {len(blockers)}")
+        for task in blockers:
+            print_task("BLOCKED ", task)
+    else:
+        print("BLOCKERS 0")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

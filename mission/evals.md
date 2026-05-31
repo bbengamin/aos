@@ -98,3 +98,20 @@ Checks expected:
 - it writes a timestamped log file under `logs/`
 - it returns the same exit status as `scripts/episode`
 - eval still returns `EVAL_PASS`
+
+## 2026-05-31 - Blocker visibility eval
+
+Command:
+
+```bash
+./scripts/status
+./scripts/next-task
+./scripts/eval
+```
+
+Checks expected:
+
+- tasks with `blocked_by_human: true` remain visible to humans
+- blocked tasks are not selected as the next safe task
+- `scripts/status` shows current work, next work, and blockers in one place
+- eval confirms blocker visibility support is present
