@@ -24,6 +24,12 @@ def print_candidate(candidate: dict) -> None:
     if "theme_open_tasks" in candidate:
         print(f"  theme_open_tasks: {candidate['theme_open_tasks']}")
 
+    if candidate.get("covering_task_id"):
+        print(f"  covering_task_id: {candidate['covering_task_id']}")
+
+    if candidate.get("covering_task_status"):
+        print(f"  covering_task_status: {candidate['covering_task_status']}")
+
 
 def main() -> int:
     data = load_tasks()

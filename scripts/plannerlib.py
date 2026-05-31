@@ -203,14 +203,18 @@ def all_planner_templates(data: dict) -> list[dict]:
 
 
 def template_already_covered(data: dict, template: dict) -> bool:
+    return covering_task(data, template) is not None
+
+
+def covering_task(data: dict, template: dict) -> dict | None:
     for task in data.get("tasks", []):
         if task.get("title") != template["title"]:
             continue
         if task.get("done_condition") != template["done_condition"]:
             continue
         if task.get("status") in {"pending", "in_progress", "done"}:
-            return True
-    return False
+            return task
+    return None
 
 
 def title_is_done(data: dict, title: str) -> bool:
@@ -280,8 +284,11 @@ def audit_planner_candidates(data: dict, *, max_auto_tasks: int | None = None) -
         }
 
         if template_already_covered(data, template):
+            matching_task = covering_task(data, template)
             candidate["status"] = "covered"
             candidate["reason"] = "matching_task_already_exists"
+            candidate["covering_task_id"] = matching_task.get("id")
+            candidate["covering_task_status"] = matching_task.get("status")
         else:
             missing_titles = missing_required_titles(data, template)
             if budget_exhausted:

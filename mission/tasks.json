@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-31T15:46:19Z",
+  "updated_at": "2026-05-31T15:48:49Z",
   "tasks": [
     {
       "id": "BOOT-1",
@@ -454,7 +454,7 @@
       "id": "AUTO-17",
       "title": "Refine planner backlog generation heuristics batch 2",
       "theme": "planner",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "kind": "improvement",
       "safe": true,
@@ -470,7 +470,10 @@
       "dependency_titles": [
         "Add planner candidate audit command"
       ],
-      "planned_at": "2026-05-31T15:43:56Z"
+      "planned_at": "2026-05-31T15:43:56Z",
+      "started_at": "2026-05-31T15:46:30Z",
+      "completed_at": "2026-05-31T15:48:49Z",
+      "completion_summary": "planner candidate audits now show the covering task id and status for covered work, with README and eval coverage updated to verify the new explanation signal."
     },
     {
       "id": "AUTO-18",
